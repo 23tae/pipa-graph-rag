@@ -166,7 +166,9 @@ Entity = Annotated[
     Field(discriminator="type"),
 ]
 
-EntityType = Literal["data_category", "role", "processing_activity", "purpose", "deontic"]
+EntityType = Literal[
+    "data_category", "role", "processing_activity", "purpose", "deontic", "article"
+]
 
 
 class ReferenceKind(StrEnum):
@@ -193,7 +195,7 @@ class ArticleReference(BaseModel):
 
 
 class ConceptRelationKind(StrEnum):
-    """개념 사이의 관계 (LLM이 추출). 허용하는 개체 유형 쌍은 ALLOWED_ENDPOINTS에 있다."""
+    """개념 사이의 관계 (LLM이 추출). 허용하는 끝점 유형 쌍은 ALLOWED_ENDPOINTS에 있다."""
 
     PERFORMS = "performs"  # Role → ProcessingActivity
     ACTS_ON = "acts_on"  # ProcessingActivity → DataCategory
@@ -202,6 +204,7 @@ class ConceptRelationKind(StrEnum):
     COUNTERPARTY = "counterparty"  # Deontic → Role (상대방)
     CONCERNS_ACTIVITY = "concerns_activity"  # Deontic → ProcessingActivity
     CONCERNS_DATA = "concerns_data"  # Deontic → DataCategory
+    DESCRIBED_BY = "described_by"  # Purpose → Article (PrOnto의 isDescribedBy)
 
 
 ALLOWED_ENDPOINTS: dict[ConceptRelationKind, tuple[EntityType, EntityType]] = {
@@ -212,6 +215,7 @@ ALLOWED_ENDPOINTS: dict[ConceptRelationKind, tuple[EntityType, EntityType]] = {
     ConceptRelationKind.COUNTERPARTY: ("deontic", "role"),
     ConceptRelationKind.CONCERNS_ACTIVITY: ("deontic", "processing_activity"),
     ConceptRelationKind.CONCERNS_DATA: ("deontic", "data_category"),
+    ConceptRelationKind.DESCRIBED_BY: ("purpose", "article"),
 }
 
 
@@ -221,16 +225,24 @@ class ConceptRelation(BaseModel):
     target_id: NonEmptyStr
     evidence: Evidence
 
-    def check_endpoints(self, entities: dict[str, Entity]) -> None:
-        """두 끝점이 존재하고 관계가 허용하는 유형인지 확인한다. 어긋나면 ValueError."""
+    def check_endpoints(self, entities: dict[str, Entity], article_id: str) -> None:
+        """두 끝점이 존재하고 관계가 허용하는 유형인지 확인한다. 어긋나면 ValueError.
+
+        조문 끝점은 개체 목록에 없고, 추출 대상 조문(article_id)이어야 한다.
+        """
         expected_source, expected_target = ALLOWED_ENDPOINTS[self.kind]
-        source, target = entities.get(self.source_id), entities.get(self.target_id)
-        if source is None or target is None:
+        source = entities.get(self.source_id)
+        if expected_target == "article":
+            target_type = "article" if self.target_id == article_id else None
+        else:
+            target = entities.get(self.target_id)
+            target_type = target.type if target else None
+        if source is None or target_type is None:
             raise ValueError("관계의 끝점이 개체 목록에 없다")
-        if (source.type, target.type) != (expected_source, expected_target):
+        if (source.type, target_type) != (expected_source, expected_target):
             raise ValueError(
                 f"{self.kind}는 {expected_source}→{expected_target}만 허용한다 "
-                f"(받은 값: {source.type}→{target.type})"
+                f"(받은 값: {source.type}→{target_type})"
             )
 
 
@@ -240,6 +252,8 @@ class ConceptExtraction(BaseModel):
     article_id: NonEmptyStr
     entities: list[Entity] = Field(default_factory=list)
     relations: list[ConceptRelation] = Field(default_factory=list)
+    # PrOnto의 isLegalBasis. 이 조문이 처리의 근거 규정인가. None은 판단하지 못함(unknown)이다.
+    is_legal_basis: bool | None = None
 
     @model_validator(mode="after")
     def _relations_are_consistent(self) -> ConceptExtraction:
@@ -247,5 +261,5 @@ class ConceptExtraction(BaseModel):
         for relation in self.relations:
             if relation.evidence.article_id != self.article_id:
                 raise ValueError("evidence.article_id는 article_id와 같아야 한다")
-            relation.check_endpoints(entities)
+            relation.check_endpoints(entities, self.article_id)
         return self

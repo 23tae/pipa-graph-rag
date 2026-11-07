@@ -114,3 +114,34 @@ def test_extraction_rejects_evidence_from_other_article():
                 )
             ],
         )
+
+
+def purpose_extraction(target_id: str, **extra) -> dict:
+    return {
+        "article_id": "law:15",
+        "entities": [{"type": "purpose", "id": "purpose:수집 목적", "name": "수집 목적"}],
+        "relations": [
+            {
+                "kind": "described_by",
+                "source_id": "purpose:수집 목적",
+                "target_id": target_id,
+                "evidence": {"article_id": "law:15", "quote": "수집할 수 있다"},
+            }
+        ],
+        **extra,
+    }
+
+
+def test_purpose_described_by_the_extracted_article():
+    extraction = ConceptExtraction.model_validate(purpose_extraction("law:15"))
+    assert extraction.relations[0].kind == ConceptRelationKind.DESCRIBED_BY
+
+
+def test_described_by_target_must_be_the_extracted_article():
+    with pytest.raises(ValidationError):
+        ConceptExtraction.model_validate(purpose_extraction("law:17"))
+
+
+def test_is_legal_basis_is_unknown_by_default():
+    assert ConceptExtraction(article_id="law:15").is_legal_basis is None
+    assert ConceptExtraction(article_id="law:15", is_legal_basis=True).is_legal_basis is True
