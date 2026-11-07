@@ -7,10 +7,10 @@ from typing import Protocol
 
 from pydantic import BaseModel
 
+from ..config import ANSWER_MODEL
 from ..schema import Article
 from .prompt import LATEST_PROMPT_VERSION, build_user_message, load_prompt
 
-MODEL = "gpt-6-luna"
 # 추론 토큰과 출력 토큰을 합친 한도. 추론 모델 가이드가 최소 25,000토큰을 확보하라고 권한다.
 MAX_OUTPUT_TOKENS = 25_000
 
@@ -69,7 +69,7 @@ def ask(answerer: Answerer, question: str, articles: list[Article]) -> Answer:
 
 
 class OpenAIAnswerer:
-    def __init__(self, model: str = MODEL, prompt_version: str = LATEST_PROMPT_VERSION, client=None):
+    def __init__(self, model: str = ANSWER_MODEL, prompt_version: str = LATEST_PROMPT_VERSION, client=None):
         from openai import OpenAI
 
         self.model = model

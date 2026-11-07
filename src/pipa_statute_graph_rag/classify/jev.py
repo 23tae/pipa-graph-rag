@@ -7,12 +7,12 @@ import os
 
 import httpx
 
+from ..config import JEV_MODEL
 from ..schema import Article
 from .base import JudgeFailed, JudgeResult, SupportItem
 from .prompt import LATEST_SUPPORT_PROMPT_VERSION, load_prompt
 
 URL = "https://openrouter.ai/api/alpha/decisions"
-MODEL = "~typesafe/jev-latest"
 MAX_QUESTIONS = 50  # 문서에 한도가 없어서 보수적으로 나눈다
 
 
@@ -22,7 +22,7 @@ class JevJudge:
         prompt_version: str = LATEST_SUPPORT_PROMPT_VERSION,
         client: httpx.Client | None = None,
     ):
-        self.name = f"jev/{MODEL}"
+        self.name = f"jev/{JEV_MODEL}"
         self.prompt_id = f"classify/support/{prompt_version}"
         self._template = load_prompt("support", prompt_version)
         self.prompt_sha256 = hashlib.sha256(self._template.encode("utf-8")).hexdigest()
@@ -38,7 +38,7 @@ class JevJudge:
                 URL,
                 headers={"Authorization": f"Bearer {os.environ['OPENROUTER_API_KEY']}"},
                 json={
-                    "model": MODEL,
+                    "model": JEV_MODEL,
                     "state": article.text,
                     "questions": {
                         item.id: {
