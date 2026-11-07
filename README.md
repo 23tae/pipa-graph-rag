@@ -111,7 +111,28 @@ uv run pipa-statute-graph-rag ask "개인정보 유출 사실을 알게 되면 �
 | `--max-entity-degree` | 개념 연결 확장에서 N개 이상의 조문이 언급하는 개체는 건너뜀. 0이면 건너뛰지 않음 | 50 |
 | `--no-answer` | 조문만 찾고 답변은 만들지 않음 | |
 
+## 평가
+
+질문 23개(단일 조문, 위임, 예외, 준용)와 질문마다 정답 조문을 `data/evaluation/questions.jsonl`에 두었다. 검색 설정별로 정답 조문을 얼마나 가져오는지 비교한다.
+
+```bash
+uv run pipa-statute-graph-rag evaluate-search
+uv run pipa-statute-graph-rag evaluate-search --answer --conditions keyword references/d1
+```
+
+`--answer`를 주면 답변도 만들어 인용한 조문을 정답과 대조한다. `--conditions`는 돌릴 조건을 고른다.
+
+| 조건 | 가져온 조문 수 | 필수 정답 조문 재현율 |
+| --- | --- | --- |
+| `keyword` | 3.0 | 0.659 |
+| `references`, 깊이 1 | 20.8 | 0.913 |
+| `references+concepts`, 깊이 1, `--max-entity-degree 50` (기본) | 52.5 | 1.000 |
+
+판정기 두 개(Decisions API, Jev)의 정확도 비교는 `judge-sample`과 `judge-compare`로 한다. 라벨 90개로 쟀을 때 정확도는 둘 다 약 75%였고 차이를 구분할 수 없었다.
+
 ## 그래프 구조
+
+개념 대응은 [개념 대응표](docs/concept-mapping.md)에 있다.
 
 - 노드: `Article`(조문), `Role`, `ProcessingActivity`, `DataCategory`, `Purpose`, `Deontic`(개체)
 - 조문 사이 관계: `REFERS_TO`, `IMPLEMENTS`, `DELEGATES_TO`, `APPLIES_MUTATIS_MUTANDIS`, `EXCEPTION_TO`
