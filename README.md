@@ -33,6 +33,12 @@ Neo4j Browser: http://localhost:7474
 uv run pipa-statute-graph-rag collect
 ```
 
+조문 관계 추출: 조문 본문에서 참조, 준용, 예외, 위임 관계를 정규식으로 추출해 `data/processed/references.json`에 저장한다. 위임은 시행령이 본법 조문을 인용한 관계(`implements`)를 뒤집어서 만든다.
+
+```bash
+uv run pipa-statute-graph-rag references
+```
+
 테스트
 
 ```bash
