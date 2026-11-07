@@ -27,6 +27,8 @@ docker compose up -d
 
 Neo4j Browser: http://localhost:7474
 
+사용하는 모델, 프롬프트 버전, 기본 판정기, 질의 기본값, 병렬 작업 수, 데이터 폴더는 `src/pipa_statute_graph_rag/config.py`에서 바꾼다. 명령줄 옵션을 주면 그 값이 우선한다.
+
 ## 샘플로 바로 써 보기
 
 추출과 판정(LLM 호출) 없이, 저장소의 샘플 그래프(유출 통지 조문 7개)로 질의를 해볼 수 있다. `--reset`은 Neo4j의 모든 노드를 지우고 적재한다. `--no-answer`를 주면 OpenAI API 키 없이 가져온 조문만 본다.
@@ -67,10 +69,11 @@ uv run pipa-statute-graph-rag references
 LLM으로 조문마다 역할, 처리 활동, 목적, 권리·의무 같은 개체와 그 관계를 추출한다. 관계마다 원문 인용을 요구하고, 인용이 조문 본문에 없거나 개체 유형이 맞지 않는 관계는 버린다.
 
 ```bash
-uv run pipa-statute-graph-rag extract --model gpt-6-luna
+uv run pipa-statute-graph-rag extract
 ```
 
 - 결과: `extractions/<모델>-<프롬프트 버전>.jsonl`
+- `--model`: 추출에 쓸 OpenAI 모델. 기본값은 `src/pipa_statute_graph_rag/config.py`의 `EXTRACTION_MODEL`이다.
 - `--ids law:15 law:35`: 지정한 조문만 추출한다.
 
 ### 4. 지지 여부 판정
@@ -78,22 +81,23 @@ uv run pipa-statute-graph-rag extract --model gpt-6-luna
 추출한 관계마다 인용이 그 관계를 뒷받침하는지 판정해 확률을 저장한다.
 
 ```bash
-uv run pipa-statute-graph-rag judge --model gpt-6-luna
+uv run pipa-statute-graph-rag judge
 ```
 
 - 결과: `support/<모델>-<프롬프트 버전>-<판정기>.jsonl`
 - `--judge decisions`(OpenAI Decisions API, 기본), `--judge jev`(Jev)
+- `--extraction-model`: 판정할 추출 결과의 모델. 없으면 최신 프롬프트 버전의 추출 결과가 하나뿐일 때 그 파일을, 여럿이면 `EXTRACTION_MODEL`의 파일을 쓴다. 파일이 없으면 오류를 낸다. `load-graph`도 같다.
 
 ### 5. 그래프 적재
 
 조문, 조문 관계, 개념 관계를 Neo4j에 넣는다. 본문이 "삭제"뿐인 조문은 넣지 않는다.
 
 ```bash
-uv run pipa-statute-graph-rag load-graph --model gpt-6-luna --reset --min-support 0.1
+uv run pipa-statute-graph-rag load-graph --reset
 ```
 
 - `--reset`: 적재 전에 Neo4j의 모든 노드를 지운다. 없으면 같은 데이터를 다시 넣어도 중복되지 않는다.
-- `--min-support`: 판정 확률이 이 값 이상인 개념 관계만 넣는다.
+- `--min-support`: 판정 확률이 이 값 이상인 개념 관계만 넣는다. 기본값은 0.1이고, 0이면 판정으로 거르지 않고 모두 넣는다.
 
 ### 6. 질의
 

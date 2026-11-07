@@ -4,9 +4,6 @@ from __future__ import annotations
 
 from importlib import resources
 
-LATEST_SUPPORT_PROMPT_VERSION = "v1"
-
-
 def available_versions(task: str) -> list[str]:
     files = resources.files(__package__).joinpath("prompts", task)
     return sorted(p.name.removesuffix(".txt") for p in files.iterdir() if p.name.endswith(".txt"))

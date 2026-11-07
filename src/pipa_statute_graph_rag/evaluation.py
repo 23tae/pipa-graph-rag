@@ -11,10 +11,10 @@ from statistics import mean
 
 from pydantic import BaseModel
 
+from .config import QUERY_TOP_K
 from .query import QueryEngine
 from .retrieval import Mode
 
-TOP_K = 3
 DEPTHS = (1, 2)
 SKIP_VALUES = (None, 5, 10, 20, 50)  # 개념 확장에서 건너뛸 개체의 조문 수 기준. None이면 건너뛰지 않는다
 
@@ -79,7 +79,7 @@ def evaluate_question(
     result = engine.run(
         question.question,
         mode=condition.mode,
-        top_k=TOP_K,
+        top_k=QUERY_TOP_K,
         depth=max(condition.depth, 1),
         max_entity_degree=condition.max_entity_degree,
         answer=answer,

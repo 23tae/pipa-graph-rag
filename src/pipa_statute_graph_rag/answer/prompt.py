@@ -6,8 +6,6 @@ from importlib import resources
 
 from ..schema import Article
 
-LATEST_PROMPT_VERSION = "v1"
-
 _LAW_NAMES = {"law": "개인정보 보호법", "decree": "개인정보 보호법 시행령"}
 
 
