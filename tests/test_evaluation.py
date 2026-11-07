@@ -9,6 +9,7 @@ from pipa_statute_graph_rag.evaluation import (
     evaluate_all,
     evaluate_question,
     summarize,
+    summarize_by_type,
 )
 from pipa_statute_graph_rag.query import QueryEngine
 from pipa_statute_graph_rag.retrieval import Mode
@@ -46,7 +47,7 @@ def engine() -> QueryEngine:
     )
 
 
-QUESTION = Question(id="q", question="열람 요구", required=["law:1", "decree:2"], related=["law:9"])
+QUESTION = Question(id="q", type="위임", question="열람 요구", required=["law:1", "decree:2"], related=["law:9"])
 
 
 def test_keyword_retrieval_metrics_count_required_and_related():
@@ -83,6 +84,14 @@ def test_summarize_averages_per_condition_and_marks_missing_citation_metrics():
     assert summary["keyword"]["size"] == 1 and summary["references/d1"]["size"] == 2
     assert summary["references/d1"]["recall_required"] == 1.0
     assert math.isnan(summary["keyword"]["citation_precision"])
+
+
+def test_summarize_by_type_averages_each_type_separately():
+    other = Question(id="p", type="단일", question="파기", required=["law:3"], related=[])
+    conds = [Condition(mode=Mode.KEYWORD, depth=0)]
+    results = evaluate_all(engine(), [QUESTION, other], conds, answer=False, workers=1)
+    by_type = summarize_by_type(results, [QUESTION, other], "recall_required")
+    assert by_type["keyword"] == {"위임": 0.5, "단일": 1.0}
 
 
 def test_conditions_cover_keyword_references_and_concepts_with_each_skip_value():
