@@ -1,33 +1,13 @@
-"""법제처 OPEN API로 법령 본문을 받아 조문 단위로 정리한다."""
+"""법제처 응답을 조문 단위로 정리한다. 네트워크를 쓰지 않는다."""
 
 from __future__ import annotations
 
-import json
-import os
-from pathlib import Path
 from typing import Any, Literal
 
-import httpx
-from pydantic import BaseModel
-
-from .schema import Article
-
-BASE_URL = "https://www.law.go.kr/DRF"
+from ..schema import Article
 
 # 검색 응답의 이 필드에 인증키가 들어 있다.
 SECRET_FIELDS = frozenset({"법령상세링크"})
-
-
-class LawSource(BaseModel):
-    key: Literal["law", "decree"]
-    name: str
-    mst: str  # 법령일련번호
-
-
-LAWS = (
-    LawSource(key="law", name="개인정보 보호법", mst="283839"),
-    LawSource(key="decree", name="개인정보 보호법 시행령", mst="289537"),
-)
 
 
 def strip_secrets(value: Any) -> Any:
@@ -39,30 +19,9 @@ def strip_secrets(value: Any) -> Any:
     return value
 
 
-def _get_json(endpoint: str, oc: str, params: dict[str, str]) -> dict[str, Any]:
-    response = httpx.get(
-        f"{BASE_URL}/{endpoint}",
-        params={"OC": oc, "type": "JSON", **params},
-        timeout=30,
-    )
-    response.raise_for_status()
-    return strip_secrets(response.json())
-
-
-def find_mst(name: str, oc: str) -> str:
-    """현행 법령 이름으로 법령일련번호를 찾는다."""
-    data = _get_json("lawSearch.do", oc, {"target": "law", "query": name})
-    laws = data["LawSearch"].get("law", [])
-    if isinstance(laws, dict):
-        laws = [laws]
-    for law in laws:
-        if law["법령명한글"] == name and law["현행연혁코드"] == "현행":
-            return law["법령일련번호"]
-    raise LookupError(f"현행 법령을 찾지 못했다: {name}")
-
-
-def fetch_law(mst: str, oc: str) -> dict[str, Any]:
-    return _get_json("lawService.do", oc, {"target": "law", "MST": mst})
+def assert_no_secret(payload: str, oc: str) -> None:
+    if oc and oc in payload:
+        raise RuntimeError("저장하려는 내용에 인증키가 들어 있다")
 
 
 def _as_list(value: Any) -> list[Any]:
@@ -119,24 +78,4 @@ def parse_articles(raw: dict[str, Any], law_key: Literal["law", "decree"]) -> li
                 effective_date=unit["조문시행일자"],
             )
         )
-    return articles
-
-
-def assert_no_secret(payload: str, oc: str) -> None:
-    if oc and oc in payload:
-        raise RuntimeError("저장하려는 내용에 인증키가 들어 있다")
-
-
-def collect(out_dir: Path, oc: str | None = None) -> list[Article]:
-    """본법과 시행령을 받아 out_dir/articles.json에 조문 단위로 저장한다."""
-    oc = oc or os.environ["LAW_OC"]
-    articles: list[Article] = []
-    for law in LAWS:
-        articles.extend(parse_articles(fetch_law(law.mst, oc), law.key))
-    payload = json.dumps(
-        [a.model_dump() for a in articles], ensure_ascii=False, indent=2
-    )
-    assert_no_secret(payload, oc)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "articles.json").write_text(payload + "\n", encoding="utf-8")
     return articles
