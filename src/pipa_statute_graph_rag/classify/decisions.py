@@ -25,6 +25,7 @@ class DecisionsJudge:
     def judge(self, article: Article, items: list[SupportItem]) -> JudgeResult:
         probabilities: dict[str, float] = {}
         input_tokens = 0
+        model_version = None
         for start in range(0, len(items), MAX_QUESTIONS):
             chunk = items[start : start + MAX_QUESTIONS]
             decision = self._client.decisions.create(
@@ -40,6 +41,7 @@ class DecisionsJudge:
                 ],
             )
             input_tokens += decision.usage.input_tokens
+            model_version = getattr(decision, "model", None) or model_version
             for answer in decision.answers:
                 if answer.type != "predicate":
                     raise JudgeFailed(f"{article.id}: {answer.type} 응답 ({answer.name})")
@@ -48,5 +50,7 @@ class DecisionsJudge:
         if missing:
             raise JudgeFailed(f"{article.id}: 답이 없는 질문 {missing[:3]}")
         return JudgeResult(
-            probabilities=[probabilities[item.id] for item in items], input_tokens=input_tokens
+            probabilities=[probabilities[item.id] for item in items],
+            input_tokens=input_tokens,
+            model_version=model_version,
         )

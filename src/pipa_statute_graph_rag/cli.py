@@ -34,6 +34,9 @@ def main() -> None:
         "--extraction-prompt-version", default=None, help="판정할 추출 결과의 프롬프트 버전. 없으면 최신 버전"
     )
     judge_cmd.add_argument("--workers", type=int, default=4)
+    judge_cmd.add_argument(
+        "--judge", choices=["decisions", "jev"], default="decisions", help="판정기. 기본은 OpenAI Decisions API"
+    )
 
     graph_cmd = sub.add_parser("load-graph", help="조문, 조문 관계, 추출 결과를 Neo4j에 적재한다")
     graph_cmd.add_argument("--model", required=True, help="적재할 추출 결과의 모델 ID")
@@ -46,6 +49,9 @@ def main() -> None:
         type=float,
         default=None,
         help="판정 확률이 이 값 이상인 개념 관계만 적재한다. 없으면 모두 적재한다",
+    )
+    graph_cmd.add_argument(
+        "--judge", choices=["decisions", "jev"], default="decisions", help="--min-support에 쓸 판정 결과"
     )
 
     args = parser.parse_args()
@@ -86,7 +92,6 @@ def main() -> None:
         for article_id, error in failures:
             print(f"실패 {article_id}: {error}")
     elif args.command == "judge":
-        from .classify.decisions import DecisionsJudge
         from .classify.support import load_support, run_judgment
         from .collect import load_articles
         from .extraction.pipeline import load_records
@@ -97,8 +102,15 @@ def main() -> None:
             r.article_id: r.extraction
             for r in load_records(DATA_DIR / "extractions" / f"{args.model}-{version}.jsonl")
         }
-        judge = DecisionsJudge()
-        out_path = DATA_DIR / "support" / f"{args.model}-{version}.jsonl"
+        if args.judge == "jev":
+            from .classify.jev import JevJudge
+
+            judge = JevJudge()
+        else:
+            from .classify.decisions import DecisionsJudge
+
+            judge = DecisionsJudge()
+        out_path = DATA_DIR / "support" / f"{args.model}-{version}-{args.judge}.jsonl"
         saved, failures = run_judgment(
             load_articles(DATA_DIR / "articles.json"), extractions, judge, out_path, workers=args.workers
         )
@@ -126,7 +138,7 @@ def main() -> None:
         if args.min_support is not None:
             from .classify.support import filter_by_support, load_support
 
-            support = load_support(DATA_DIR / "support" / f"{args.model}-{version}.jsonl")
+            support = load_support(DATA_DIR / "support" / f"{args.model}-{version}-{args.judge}.jsonl")
             before = sum(len(e.relations) for e in extractions)
             extractions = filter_by_support(extractions, support, args.min_support)
             print(f"판정 확률 {args.min_support} 이상만 적재: 개념 관계 {before} → "

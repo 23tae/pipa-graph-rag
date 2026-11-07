@@ -44,6 +44,7 @@ class SupportRecord(BaseModel):
     judge: str
     prompt_id: str
     prompt_sha256: str
+    model_version: str | None = None
     probabilities: list[float]  # extraction.relations와 같은 순서
     input_tokens: int
 
@@ -65,6 +66,7 @@ def _judge_one(article: Article, extraction: ConceptExtraction, judge: SupportJu
         judge=judge.name,
         prompt_id=judge.prompt_id,
         prompt_sha256=judge.prompt_sha256,
+        model_version=result.model_version,
         probabilities=result.probabilities,
         input_tokens=result.input_tokens,
     )

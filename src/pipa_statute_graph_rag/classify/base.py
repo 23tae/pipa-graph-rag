@@ -20,6 +20,7 @@ class SupportItem(BaseModel):
 class JudgeResult(BaseModel):
     probabilities: list[float]  # items와 같은 순서. 인용이 주장을 뒷받침할 확률
     input_tokens: int
+    model_version: str | None = None  # 응답이 알려 준 실제 모델. 별칭(latest)이 가리키는 버전을 남긴다
 
 
 class JudgeFailed(Exception):
