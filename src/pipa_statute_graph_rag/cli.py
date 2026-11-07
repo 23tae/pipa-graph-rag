@@ -84,6 +84,7 @@ def main() -> None:
 
     eval_cmd = sub.add_parser("evaluate-search", help="질문과 정답 조문으로 검색 설정을 비교한다")
     eval_cmd.add_argument("--answer", action="store_true", help="답변도 만들어 인용을 정답과 대조한다")
+    eval_cmd.add_argument("--conditions", nargs="+", help="돌릴 조건 이름. 없으면 모든 조건")
     eval_cmd.add_argument("--workers", type=int, default=4)
 
     args = parser.parse_args()
@@ -295,10 +296,11 @@ def main() -> None:
         from .query import QueryEngine
 
         questions = load_questions(EVALUATION_DIR / "questions.jsonl")
+        selected = [c for c in conditions() if not args.conditions or c.name in args.conditions]
         driver = connect()
         try:
             results = evaluate_all(
-                QueryEngine.from_graph(driver), questions, conditions(), answer=args.answer, workers=args.workers
+                QueryEngine.from_graph(driver), questions, selected, answer=args.answer, workers=args.workers
             )
         finally:
             driver.close()
