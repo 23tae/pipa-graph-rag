@@ -86,7 +86,7 @@ uv run pipa-statute-graph-rag load-graph --model gpt-6-luna --reset --min-suppor
 
 ### 6. 질의
 
-질문에서 키워드(문자 n-gram BM25)로 조문을 찾고, 그래프로 이웃 조문까지 넓혀서 가져온 조문만 근거로 답한다. 답에 인용한 조문이 가져온 조문에 없으면 알려 준다.
+Neo4j에서 읽은 조문에서 질문과 비슷한 조문을 키워드(문자 n-gram BM25)로 찾고, 그래프로 이웃 조문까지 넓혀서 가져온 조문만 근거로 답한다. 답에 인용한 조문이 가져온 조문에 없으면 알려 준다.
 
 ```bash
 uv run pipa-statute-graph-rag ask "개인정보 유출 사실을 알게 되면 정보주체에게 언제까지 통지해야 하나요?"
@@ -99,8 +99,6 @@ uv run pipa-statute-graph-rag ask "개인정보 유출 사실을 알게 되면 �
 | `--top-k` | 키워드 검색으로 가져올 시드 조문 수 | 3 |
 | `--max-entity-degree` | 개념 연결 확장에서 N개 이상의 조문이 언급하는 개체는 건너뜀 | 건너뛰지 않음 |
 | `--no-answer` | 조문만 찾고 답변은 만들지 않음 | |
-
-`keyword` 모드는 Neo4j 없이 쓸 수 있다.
 
 ## 그래프 구조
 
