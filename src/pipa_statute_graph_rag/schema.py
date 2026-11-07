@@ -1,8 +1,8 @@
-"""PrOnto 다섯 모듈에 맞춘 개체와 관계 정의.
+"""PrOnto의 각 모듈에 맞춘 개체와 관계 정의.
 
 모듈 대응: 문서=Article, 데이터=DataCategory, 행위자와 역할=Role,
-처리=ProcessingActivity, 목적=Purpose, 의무 연산자=Deontic.
-처리 실행, 위반·준수 판정, 유럽연합 고유 개념은 정의하지 않는다.
+처리=ProcessingActivity, 목적=Purpose, 의무 연산자(deontic operators)=Deontic.
+처리 실행, 위반·준수 판정, 유럽연합에만 있는 개념은 정의하지 않는다.
 근거를 찾지 못한 값은 UNKNOWN으로 둔다.
 """
 
@@ -45,8 +45,8 @@ class DataCategoryKind(StrEnum):
     PSEUDONYMIZED = "pseudonymized"  # 가명정보
     ANONYMOUS = "anonymous"  # 익명
     SENSITIVE = "sensitive"  # 민감정보
-    UNIQUE_IDENTIFIER = "unique_identifier"  # 고유식별정보 (한국 고유)
-    RESIDENT_NUMBER = "resident_number"  # 주민등록번호 (한국 고유)
+    UNIQUE_IDENTIFIER = "unique_identifier"  # 고유식별정보 (한국 법에만 있음)
+    RESIDENT_NUMBER = "resident_number"  # 주민등록번호 (한국 법에만 있음)
     OTHER = "other"
     UNKNOWN = "unknown"
 
@@ -60,8 +60,8 @@ class RoleKind(StrEnum):
     DPO = "dpo"  # 개인정보 보호책임자
     REPRESENTATIVE = "representative"  # 국내대리인
     SUPERVISORY_AUTHORITY = "supervisory_authority"  # 개인정보 보호위원회
-    HANDLER = "handler"  # 개인정보취급자 (한국 고유)
-    PUBLIC_INSTITUTION = "public_institution"  # 공공기관 (한국 고유)
+    HANDLER = "handler"  # 개인정보취급자 (한국 법에만 있음)
+    PUBLIC_INSTITUTION = "public_institution"  # 공공기관 (한국 법에만 있음)
     OTHER = "other"
     UNKNOWN = "unknown"
 
@@ -110,7 +110,7 @@ class DeonticKind(StrEnum):
 
 
 class DeonticSubtype(StrEnum):
-    """PrOnto의 권리·의무 하위 분류와 한국 고유 의무 유형."""
+    """PrOnto의 권리·의무 하위 분류와 한국 법에만 있는 의무 유형."""
 
     ACCESS = "access"  # 열람
     RECTIFICATION = "rectification"  # 정정
@@ -121,11 +121,11 @@ class DeonticSubtype(StrEnum):
     INFORM = "inform"  # 통지
     NOTIFY_BREACH = "notify_breach"  # 유출 통지·신고
     PREPARE_DOCUMENT = "prepare_document"  # 처리방침, 파일 등록
-    SAFEGUARD = "safeguard"  # 안전조치 (한국 고유)
-    IMPACT_ASSESSMENT = "impact_assessment"  # 영향평가 (한국 고유)
-    DESIGNATE_DPO = "designate_dpo"  # 보호책임자 지정 (한국 고유)
-    DESIGNATE_REPRESENTATIVE = "designate_representative"  # 국내대리인 지정 (한국 고유)
-    SUPERVISE_PROCESSOR = "supervise_processor"  # 위탁 감독 (한국 고유)
+    SAFEGUARD = "safeguard"  # 안전조치 (한국 법에만 있음)
+    IMPACT_ASSESSMENT = "impact_assessment"  # 영향평가 (한국 법에만 있음)
+    DESIGNATE_DPO = "designate_dpo"  # 보호책임자 지정 (한국 법에만 있음)
+    DESIGNATE_REPRESENTATIVE = "designate_representative"  # 국내대리인 지정 (한국 법에만 있음)
+    SUPERVISE_PROCESSOR = "supervise_processor"  # 위탁 감독 (한국 법에만 있음)
     OTHER = "other"
     UNKNOWN = "unknown"
 
