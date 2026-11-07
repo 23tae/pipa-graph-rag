@@ -1,0 +1,90 @@
+{"key":"law:58#0","supported":true,"reason":"인용이 수집 요청 대상인 개인정보를 직접 말한다"}
+{"key":"law:11#11","supported":true,"reason":"개인정보처리자에게 자료제출을 요구할 수 있다고 직접 말한다"}
+{"key":"law:4#9","supported":false,"reason":"인용이 '다음 각 호의 권리'라고만 해서 이 권리를 말하지 않는다"}
+{"key":"decree:42-6#15","supported":false,"reason":"저장하지 않을 의무의 상대방이 정보주체라고 말하지 않는다. 전달 대상이 본인일 뿐이다"}
+{"key":"law:31#3","supported":false,"reason":"인용에 보호책임자가 상대방으로 나오지 않는다"}
+{"key":"law:22-2#9","supported":true,"reason":"[맥락] 주체가 인용에 없지만 조문이 개인정보처리자의 수집을 규율한다"}
+{"key":"decree:42-4#13","supported":false,"reason":"인용에 통신전송정보가 없다. 각 호에 있는 내용이다"}
+{"key":"law:32#6","supported":false,"reason":"공개 대상은 개인정보파일 등록 현황이고 개인정보 자체가 아니다"}
+{"key":"law:4#3","supported":false,"reason":"인용이 '다음 각 호의 권리'라고만 해서 열람 요구권을 말하지 않는다"}
+{"key":"decree:29-2#0","supported":true,"reason":"가명정보를 결합한다고 직접 말한다"}
+{"key":"law:60#1","supported":false,"reason":"인용은 금지('이용하여서는 아니 된다')이고 주장은 수행한다는 것이라 반대다"}
+{"key":"decree:31#0","supported":true,"reason":"개인정보를 직접 수집한다고 직접 말한다"}
+{"key":"decree:29-2#13","supported":true,"reason":"관계 중앙행정기관의 장이 공고해야 한다고 직접 말한다"}
+{"key":"decree:23#6","supported":false,"reason":"의견을 수렴할 대상이 '다음 각 호의 사람'이고 각 호의 내용이 인용에 없다"}
+{"key":"decree:42-6#36","supported":true,"reason":"개인정보관리 전문기관의 분리 보관 의무를 직접 말한다"}
+{"key":"law:37-2#6","supported":true,"reason":"개인정보처리자가 공개하여야 한다고 직접 말한다"}
+{"key":"decree:42-5#3","supported":true,"reason":"[맥락] 거절 금지의 상대방은 요구하는 정보주체(대리인 포함)로 읽힌다"}
+{"key":"law:58#1","supported":true,"reason":"제공 요청되는 개인정보를 직접 말한다"}
+{"key":"decree:42-6#7","supported":false,"reason":"인용이 정의 문구 일부일 뿐 개인정보 전송을 수행한다는 말이 없다"}
+{"key":"decree:3#4","supported":true,"reason":"영상정보를 기록하는 장치를 직접 말한다"}
+{"key":"decree:42-9#14","supported":false,"reason":"겸업 금지의 주체는 중계전문기관이고 일반수신자는 그 대상이다. 방향이 다르다"}
+{"key":"law:28-2#3","supported":true,"reason":"과학적 연구를 위한 가명정보 처리를 직접 말한다"}
+{"key":"decree:33#0","supported":true,"reason":"긴급한 경우의 일시적 처리를 직접 말한다"}
+{"key":"decree:42-8#1","supported":true,"reason":"동일한 개인정보에 대한 전송 요구를 직접 말한다"}
+{"key":"decree:62-2#20","supported":true,"reason":"민감정보가 포함된 자료를 처리한다고 직접 말한다"}
+{"key":"decree:15#6","supported":true,"reason":"대장에 기록하고 관리해야 한다고 직접 말한다"}
+{"key":"law:33#10","supported":true,"reason":"[맥락] 주체가 인용에 없지만 평가기관 지정은 보호위원회의 권한이다"}
+{"key":"law:4#7","supported":false,"reason":"인용이 '다음 각 호의 권리'라고만 해서 삭제 요구권을 말하지 않는다"}
+{"key":"law:39-3#6","supported":true,"reason":"법원이 자료를 다른 사람이 보게 해서는 안 된다고 직접 말한다"}
+{"key":"law:63-2#4","supported":true,"reason":"개인정보처리자가 이행 결과를 알려야 한다고 직접 말한다"}
+{"key":"law:34#4","supported":true,"reason":"[맥락] 주체가 인용에 없지만 조문이 개인정보처리자의 통지 의무를 규율한다"}
+{"key":"decree:42-16#0","supported":true,"reason":"보호위원회가 플랫폼에 등재하게 해야 한다고 직접 말한다"}
+{"key":"decree:13-2#5","supported":true,"reason":"평가대상기관을 방문하여 평가할 수 있다고 직접 말한다"}
+{"key":"law:63-2#3","supported":true,"reason":"보호위원회에 통지하여야 한다고 직접 말한다"}
+{"key":"decree:39#4","supported":true,"reason":"정보주체에게 알릴 수 있다고 직접 말한다"}
+{"key":"law:25-2#7","supported":false,"reason":"인용은 촬영 금지이고 주장은 수행한다는 것이라 반대다"}
+{"key":"decree:42-9#19","supported":true,"reason":"관계 중앙행정기관의 장이 비용을 지원할 수 있다고 직접 말한다"}
+{"key":"law:17#12","supported":false,"reason":"제공의 상대방은 제공받는 자이고 정보주체는 동의 면제의 당사자일 뿐이다"}
+{"key":"law:64-2#15","supported":true,"reason":"보호위원회가 환급가산금을 지급하여야 한다고 직접 말한다"}
+{"key":"decree:12#2","supported":true,"reason":"관계 중앙행정기관의 장에게 통보해야 한다고 직접 말한다"}
+{"key":"decree:29-12#1","supported":true,"reason":"보호위원회에 제출해야 한다고 직접 말한다"}
+{"key":"law:38#2","supported":true,"reason":"법정대리인이 열람등요구를 할 수 있다고 직접 말한다"}
+{"key":"law:10#1","supported":true,"reason":"보호위원회에 제출하여 시행하여야 한다고 직접 말한다"}
+{"key":"law:28-5#9","supported":true,"reason":"개인정보처리자가 처리를 중지하고 회수·파기하여야 한다고 직접 말한다"}
+{"key":"decree:42-3#0","supported":true,"reason":"개인정보를 전송받는 자를 직접 말한다"}
+{"key":"law:74-2#1","supported":false,"reason":"추징을 하는 쪽이 따로 있고 죄를 지은 자는 추징을 당하는 쪽이다"}
+{"key":"decree:13-2#0","supported":true,"reason":"보호위원회가 평가계획을 통보해야 한다고 직접 말한다"}
+{"key":"decree:32#1","supported":true,"reason":"고유식별정보를 처리하는 자를 직접 말한다"}
+{"key":"law:35-2#4","supported":true,"reason":"개인정보처리자가 전송하여야 한다고 직접 말한다"}
+{"key":"law:31-2#5","supported":false,"reason":"국내대리인은 의무를 지는 쪽이고 의무의 상대방이 아니다. 방향이 다르다"}
+{"key":"decree:49#0","supported":true,"reason":"위원장이 위원에게 알려야 한다고 직접 말한다"}
+{"key":"law:15#5","supported":false,"reason":"인용이 '다음 각 호'라고만 해서 소관 업무 수행 목적을 말하지 않는다"}
+{"key":"law:64-2#2","supported":true,"reason":"고유식별정보를 처리한 경우를 직접 말한다"}
+{"key":"law:25-2#14","supported":true,"reason":"촬영 사실을 표시하고 알려야 한다고 직접 말한다"}
+{"key":"law:4#12","supported":false,"reason":"인용이 '다음 각 호의 권리'라고만 해서 이 권리를 말하지 않는다"}
+{"key":"law:74-2#0","supported":false,"reason":"몰수를 하는 쪽이 따로 있고 죄를 지은 자는 몰수를 당하는 쪽이다"}
+{"key":"law:28-3#12","supported":true,"reason":"전문기관의 장의 승인을 받아야 한다고 직접 말한다"}
+{"key":"decree:35#1","supported":true,"reason":"고유식별정보의 처리가 수반되는 파일을 직접 말한다"}
+{"key":"law:11#6","supported":true,"reason":"개인정보처리자를 대상으로 조사를 실시할 수 있다고 직접 말한다"}
+{"key":"decree:62-2#15","supported":true,"reason":"주민등록번호가 포함된 자료를 처리할 수 있다고 직접 말한다"}
+{"key":"law:25-2#0","supported":false,"reason":"인용은 촬영 금지이고 주장은 수행한다는 것이라 반대다"}
+{"key":"law:15#1","supported":true,"reason":"개인정보처리자가 수집 목적의 범위에서 이용할 수 있다고 직접 말한다"}
+{"key":"decree:32#3","supported":true,"reason":"개인정보처리자가 보호책임자를 지정해야 한다고 직접 말한다"}
+{"key":"law:49#15","supported":true,"reason":"분쟁조정위원회의 의결로 처리기간을 연장할 수 있다고 직접 말한다"}
+{"key":"decree:62-2#3","supported":true,"reason":"주민등록번호가 포함된 자료를 처리할 수 있다고 직접 말한다"}
+{"key":"law:4#16","supported":false,"reason":"인용이 '다음 각 호의 권리'라고만 해서 이 권리를 말하지 않는다"}
+{"key":"law:15#3","supported":true,"reason":"개인정보를 수집 목적의 범위에서 이용할 수 있다고 직접 말한다"}
+{"key":"decree:42-6#27","supported":false,"reason":"인용은 수집 금지이고 주장은 수행한다는 것이라 반대다"}
+{"key":"decree:42-6#26","supported":false,"reason":"인용은 수집 금지이고 주장은 수행한다는 것이라 반대다"}
+{"key":"law:68#9","supported":true,"reason":"관계 중앙행정기관의 장에게 통보하여야 한다고 직접 말한다"}
+{"key":"law:7-10#0","supported":true,"reason":"위원장이 소집한다고 직접 말한다"}
+{"key":"law:18#12","supported":true,"reason":"정보주체에게 알려야 한다고 직접 말한다"}
+{"key":"law:35-2#5","supported":true,"reason":"해당 정보를 전송하여야 한다고 직접 말한다"}
+{"key":"law:47#5","supported":true,"reason":"당사자 또는 그 대리인에게 송달하여야 한다고 직접 말한다"}
+{"key":"law:24-2#0","supported":false,"reason":"인용은 처리 금지이고 주장은 수행한다는 것이라 반대다"}
+{"key":"decree:42-16#9","supported":false,"reason":"제3자대상정보전송자는 제출 의무를 지는 쪽이고 상대방이 아니다. 방향이 다르다"}
+{"key":"decree:62-2#5","supported":true,"reason":"운전면허의 면허번호가 포함된 자료를 처리할 수 있다고 직접 말한다"}
+{"key":"law:37#22","supported":false,"reason":"인용에 정보주체가 상대방으로 나오지 않는다"}
+{"key":"law:39-5#3","supported":false,"reason":"송달 대상은 취소신청을 한 자이고 비밀유지명령을 신청한 자와 다를 수 있다"}
+{"key":"law:34#10","supported":true,"reason":"개인정보의 회수·삭제 조치를 직접 말한다"}
+{"key":"decree:58#2","supported":true,"reason":"보호위원회에 문서로 통보해야 한다고 직접 말한다"}
+{"key":"decree:44-4#6","supported":true,"reason":"개인정보처리자가 표준화된 용어를 사용해야 한다고 직접 말한다"}
+{"key":"decree:29-2#8","supported":true,"reason":"[맥락] 주체가 인용에 없지만 결합전문기관 지정은 보호위원회의 권한이다"}
+{"key":"decree:29-9#4","supported":true,"reason":"이전되는 개인정보의 범위를 달리 정할 수 있다고 직접 말한다"}
+{"key":"law:74#4","supported":false,"reason":"행위자는 처벌을 받는 쪽이고 처벌 권한이나 의무의 주체가 아니다"}
+{"key":"decree:62-2#12","supported":false,"reason":"위탁받은 자는 처리하는 주체의 일부이고 상대방이 아니다. 방향이 다르다"}
+{"key":"law:4#5","supported":false,"reason":"인용이 '다음 각 호의 권리'라고만 해서 이 권리를 말하지 않는다"}
+{"key":"decree:60-4#0","supported":true,"reason":"보호위원회가 연기 기간을 2년 넘겨서는 안 된다고 직접 말한다"}
+{"key":"decree:42-4#14","supported":false,"reason":"인용에 에너지전송정보가 없다. 각 호에 있는 내용이다"}
+{"key":"decree:42-5#17","supported":true,"reason":"정보주체가 전송 요구를 변경하거나 철회할 수 있다고 직접 말한다"}
