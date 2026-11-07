@@ -11,11 +11,12 @@ from pydantic import BaseModel
 from ..schema import Article, ConceptExtraction
 from .gate import apply_gate
 from .models import ExtractorResult, Rejection
-from .prompt import PROMPT_VERSION
 
 
 class Extractor(Protocol):
     model: str
+    prompt_version: str
+    prompt_sha256: str
 
     def extract(self, article: Article) -> ExtractorResult: ...
 
@@ -24,6 +25,7 @@ class ExtractionRecord(BaseModel):
     article_id: str
     model: str
     prompt_version: str
+    prompt_sha256: str | None = None
     extraction: ConceptExtraction
     proposed: int
     rejected: list[Rejection]
@@ -48,7 +50,8 @@ def _extract_one(article: Article, extractor: Extractor) -> ExtractionRecord:
     return ExtractionRecord(
         article_id=article.id,
         model=extractor.model,
-        prompt_version=PROMPT_VERSION,
+        prompt_version=f"extraction/{extractor.prompt_version}",
+        prompt_sha256=extractor.prompt_sha256,
         extraction=gate.extraction,
         proposed=gate.proposed,
         rejected=gate.rejected,

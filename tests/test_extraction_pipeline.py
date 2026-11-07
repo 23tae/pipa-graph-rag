@@ -18,6 +18,8 @@ def make_article(number: int) -> Article:
 
 class FakeExtractor:
     model = "fake"
+    prompt_version = "vtest"
+    prompt_sha256 = "abc"
 
     def __init__(self, failing: set[str] | None = None) -> None:
         self.calls: list[str] = []
@@ -57,3 +59,10 @@ def test_record_keeps_token_usage(tmp_path: Path):
     run_extraction([make_article(1)], FakeExtractor(), out, workers=1)
     record = load_records(out)[0]
     assert (record.input_tokens, record.output_tokens, record.reasoning_tokens) == (10, 5, 2)
+
+
+def test_record_keeps_prompt_version_and_hash(tmp_path: Path):
+    out = tmp_path / "out.jsonl"
+    run_extraction([make_article(1)], FakeExtractor(), out, workers=1)
+    record = load_records(out)[0]
+    assert (record.prompt_version, record.prompt_sha256) == ("extraction/vtest", "abc")

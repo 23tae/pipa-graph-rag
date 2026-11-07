@@ -24,6 +24,9 @@ def main() -> None:
     extract_cmd.add_argument("--model", required=True, help="OpenAI 모델 ID")
     extract_cmd.add_argument("--ids", nargs="+", help="추출할 조문 ID. 없으면 전체")
     extract_cmd.add_argument("--workers", type=int, default=4)
+    extract_cmd.add_argument(
+        "--prompt-version", default=None, help="extraction/prompts의 버전. 없으면 최신 버전"
+    )
 
     args = parser.parse_args()
     if args.command == "collect":
@@ -43,16 +46,15 @@ def main() -> None:
     elif args.command == "extract":
         from .collect import load_articles
         from .extraction.pipeline import load_records, run_extraction
-        from .extraction.prompt import PROMPT_VERSION
+        from .extraction.prompt import LATEST_PROMPT_VERSION
         from .llm.openai_client import OpenAIExtractor
 
         articles = load_articles(DATA_DIR / "articles.json")
         if args.ids:
             articles = [a for a in articles if a.id in set(args.ids)]
-        out_path = DATA_DIR / "extractions" / f"{args.model}-{PROMPT_VERSION}.jsonl"
-        saved, failures = run_extraction(
-            articles, OpenAIExtractor(args.model), out_path, workers=args.workers
-        )
+        extractor = OpenAIExtractor(args.model, args.prompt_version or LATEST_PROMPT_VERSION)
+        out_path = DATA_DIR / "extractions" / f"{args.model}-{extractor.prompt_version}.jsonl"
+        saved, failures = run_extraction(articles, extractor, out_path, workers=args.workers)
         records = load_records(out_path)
         proposed = sum(r.proposed for r in records)
         accepted = sum(len(r.extraction.relations) for r in records)

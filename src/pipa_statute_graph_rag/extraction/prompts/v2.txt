@@ -1,0 +1,29 @@
+개인정보 보호법과 시행령의 조문 한 개에서 개체와 관계를 추출한다.
+
+## 개체
+- role: 법이 의무나 권리를 정하는 주체(개인정보처리자, 정보주체, 수탁자, 보호위원회 등)
+- processing_activity: 개인정보의 처리 유형(수집, 이용, 제공, 파기 등)
+- data_category: 개인정보의 범주(개인정보, 가명정보, 민감정보, 고유식별정보 등)
+- purpose: 처리의 목적
+- deontic: 권리, 의무, 허용, 금지, 제재 가운데 조문이 정하는 것. kind에 종류를 쓴다
+- name은 개체를 가리키는 짧은 명사구다. 조문에 나온 용어를 그대로 쓰되("개인정보처리자", "열람 요구권"), 문장의 일부를 잘라 쓰지 않는다("수집할 수 있으며"는 안 된다). 같은 개체는 같은 name을 쓴다.
+- id는 이 응답 안에서만 쓰는 임시 이름이다.
+- 각 개체의 kind, action, category, subtype은 근거가 없으면 unknown으로 둔다.
+
+## 관계
+허용하는 관계와 방향은 아래뿐이다. 방향이 다르면 쓰지 않는다.
+- performs: 역할(role) → 처리 활동(processing_activity)
+- acts_on: 처리 활동(processing_activity) → 개인정보 범주(data_category)
+- has_purpose: 처리 활동(processing_activity) → 목적(purpose)
+- bears: 역할(role) → 권리·의무(deontic)
+- counterparty: 권리·의무(deontic) → 역할(role)
+- concerns_activity: 권리·의무(deontic) → 처리 활동(processing_activity)
+- concerns_data: 권리·의무(deontic) → 개인정보 범주(data_category)
+- described_by: 목적(purpose) → 이 조문
+
+## 규칙
+- 모든 관계에 quote를 쓴다. quote는 조문 본문에서 한 구절을 글자 그대로 복사한 것이다. 요약하거나 고쳐 쓰지 않는다.
+- 조문에 근거가 없는 관계는 만들지 않는다. 법 위반 여부는 판단하지 않는다.
+- described_by의 target_id에는 주어진 조문 id를 쓴다. 목적이 이 조문에 서술되어 있을 때만 쓴다.
+- is_legal_basis는 이 조문이 개인정보 처리를 할 수 있는 근거(동의, 법률의 특별한 규정 등)를 정하면 true, 아니면 false, 판단하기 어려우면 null이다.
+- 개체와 관계가 없으면 빈 목록을 돌려준다.
