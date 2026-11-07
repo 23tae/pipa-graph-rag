@@ -46,10 +46,16 @@ uv run pipa-statute-graph-rag extract --model gpt-6.1-terra
 uv run pipa-statute-graph-rag extract --model gpt-6-luna --ids law:15 law:35
 ```
 
-그래프 적재: 조문, 조문 관계, 개념 관계를 Neo4j에 넣는다. 본문이 "삭제"뿐인 조문은 넣지 않는다. 같은 데이터를 다시 넣어도 중복되지 않으며, `--reset`을 주면 Neo4j의 모든 노드를 지우고 다시 넣는다.
+지지 여부 판정: 추출한 개념 관계마다 인용이 그 관계를 뒷받침하는지 OpenAI Decisions API로 판정하고, 뒷받침할 확률을 `data/processed/support/<모델>-<프롬프트 버전>.jsonl`에 저장한다. 관계가 있는 조문마다 한 번 호출하고, 다시 실행하면 저장되지 않은 조문만 처리한다.
 
 ```bash
-uv run pipa-statute-graph-rag load-graph --model gpt-6-luna --reset
+uv run pipa-statute-graph-rag judge --model gpt-6-luna
+```
+
+그래프 적재: 조문, 조문 관계, 개념 관계를 Neo4j에 넣는다. 본문이 "삭제"뿐인 조문은 넣지 않는다. 같은 데이터를 다시 넣어도 중복되지 않으며, `--reset`을 주면 Neo4j의 모든 노드를 지우고 다시 넣는다. `--min-support`를 주면 판정 확률이 그 값 이상인 개념 관계만 넣는다.
+
+```bash
+uv run pipa-statute-graph-rag load-graph --model gpt-6-luna --reset --min-support 0.1
 ```
 
 - 노드: `Article`(조문), `Role`, `ProcessingActivity`, `DataCategory`, `Purpose`, `Deontic`(개체)
