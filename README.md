@@ -27,6 +27,17 @@ docker compose up -d
 
 Neo4j Browser: http://localhost:7474
 
+## 샘플로 바로 써 보기
+
+추출과 판정(LLM 호출) 없이, 저장소의 샘플 그래프(유출 통지 조문 7개)로 질의를 해볼 수 있다. `--reset`은 Neo4j의 모든 노드를 지우고 적재한다. `--no-answer`를 주면 OpenAI API 키 없이 가져온 조문만 본다.
+
+```bash
+uv run pipa-statute-graph-rag import-graph --file data/sample/graph-sample.json --reset
+uv run pipa-statute-graph-rag ask "개인정보 유출 사실을 알게 되면 정보주체에게 언제까지 통지해야 하나요?" --no-answer
+```
+
+전체 그래프는 `export-graph`로 JSON 파일로 내보내고, `import-graph --file`로 적재한다.
+
 ## 사용법
 
 아래 순서대로 실행한다. 각 단계의 결과는 `data/processed/`에 저장되고, 다시 실행하면 저장되지 않은 조문만 처리한다.
@@ -100,7 +111,28 @@ uv run pipa-statute-graph-rag ask "개인정보 유출 사실을 알게 되면 �
 | `--max-entity-degree` | 개념 연결 확장에서 N개 이상의 조문이 언급하는 개체는 건너뜀. 0이면 건너뛰지 않음 | 50 |
 | `--no-answer` | 조문만 찾고 답변은 만들지 않음 | |
 
+## 평가
+
+질문 23개(단일 조문, 위임, 예외, 준용)와 질문마다 정답 조문을 `data/evaluation/questions.jsonl`에 두었다. 검색 설정별로 정답 조문을 얼마나 가져오는지 비교한다.
+
+```bash
+uv run pipa-statute-graph-rag evaluate-search
+uv run pipa-statute-graph-rag evaluate-search --answer --conditions keyword references/d1
+```
+
+`--answer`를 주면 답변도 만들어 인용한 조문을 정답과 대조한다. `--conditions`는 돌릴 조건을 고른다.
+
+| 조건 | 가져온 조문 수 | 필수 정답 조문 재현율 |
+| --- | --- | --- |
+| `keyword` | 3.0 | 0.659 |
+| `references`, 깊이 1 | 20.8 | 0.913 |
+| `references+concepts`, 깊이 1, `--max-entity-degree 50` (기본) | 52.5 | 1.000 |
+
+판정기 두 개(Decisions API, Jev)의 정확도 비교는 `judge-sample`과 `judge-compare`로 한다. 라벨 90개로 쟀을 때 정확도는 둘 다 약 75%였고 차이를 구분할 수 없었다.
+
 ## 그래프 구조
+
+개념 대응은 [개념 대응표](docs/concept-mapping.md)에 있다.
 
 - 노드: `Article`(조문), `Role`, `ProcessingActivity`, `DataCategory`, `Purpose`, `Deontic`(개체)
 - 조문 사이 관계: `REFERS_TO`, `IMPLEMENTS`, `DELEGATES_TO`, `APPLIES_MUTATIS_MUTANDIS`, `EXCEPTION_TO`
@@ -119,6 +151,18 @@ MATCH (:Article {id: 'law:24'})-[:DELEGATES_TO]->(d) RETURN d.id, d.title
 ```bash
 uv run pytest
 ```
+
+## 한계
+
+- 본법과 시행령(현행)만 다룬다. 판례, 법령해석례, 위원회 결정은 없다.
+- 시행령이 가리키는 별표의 본문은 수집하지 않는다.
+- 개념 관계는 LLM이 추출한다. 지지 여부 판정으로 일부를 걸러도 틀린 관계가 남는다.
+- 법 위반 여부는 판정하지 않는다.
+- 평가는 질문 23개 규모라 작은 차이는 구분하지 못한다.
+
+## 출처와 유의 사항
+
+법령 본문의 출처는 법제처이다. 이 저장소의 조문 데이터는 가공본이라 공식 본문이 아니며, 정확한 내용은 [국가법령정보센터](https://www.law.go.kr)에서 확인한다. 질의 결과는 법률 자문이 아니다.
 
 ## 참고 문헌
 
