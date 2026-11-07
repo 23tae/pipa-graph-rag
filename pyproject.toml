@@ -1,0 +1,26 @@
+[project]
+name = "pipa-statute-graph-rag"
+version = "0.1.0"
+description = "개인정보 보호법과 시행령의 조문 관계를 그래프로 만들어 답하는 그래프 RAG"
+authors = [
+    { name = "Taehoon Kim", email = "taehoonkim.dev@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28.1",
+    "neo4j>=6.4.1",
+    "pydantic>=2.14.3",
+    "python-dotenv>=1.2.4",
+]
+
+[project.scripts]
+pipa-statute-graph-rag = "pipa_statute_graph_rag:main"
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
