@@ -38,6 +38,12 @@ def test_citation_of_an_article_that_was_not_retrieved_is_reported_once():
     assert check_citations(["law:1", "law:9", "law:9", "decree:2"], ["law:1", "decree:2"]) == ["law:9"]
 
 
+def test_ask_strips_brackets_from_citations_before_checking_them():
+    result = ask(FakeAnswerer(["[law:1]", " [decree:2] ", "[law:99]"]), "질문", [article("law:1"), article("decree:2")])
+    assert result.citations == ["law:1", "decree:2", "law:99"]
+    assert result.invalid_citations == ["law:99"]
+
+
 def test_all_retrieved_citations_are_valid():
     assert check_citations(["law:1"], ["law:1", "law:2"]) == []
 
