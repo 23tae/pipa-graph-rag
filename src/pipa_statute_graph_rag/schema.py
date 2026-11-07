@@ -161,10 +161,7 @@ class Deontic(_Entity):
     subtype: DeonticSubtype = DeonticSubtype.UNKNOWN
 
 
-Entity = Annotated[
-    DataCategory | Role | ProcessingActivity | Purpose | Deontic,
-    Field(discriminator="type"),
-]
+Entity = DataCategory | Role | ProcessingActivity | Purpose | Deontic
 
 EntityType = Literal[
     "data_category", "role", "processing_activity", "purpose", "deontic", "article"

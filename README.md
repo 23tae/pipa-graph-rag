@@ -39,6 +39,13 @@ uv run pipa-statute-graph-rag collect
 uv run pipa-statute-graph-rag references
 ```
 
+개념 관계 추출: LLM으로 조문마다 역할, 처리 활동, 목적, 권리·의무 같은 개체와 그 관계를 추출한다. 관계마다 원문 인용을 요구하고, 인용이 조문 본문에 없거나 개체 유형이 맞지 않는 관계는 버린다. 결과는 `data/processed/extractions/<모델>-<프롬프트 버전>.jsonl`에 조문 단위로 이어서 저장하며, 다시 실행하면 저장되지 않은 조문만 처리한다. `OPENAI_API_KEY`가 필요하다.
+
+```bash
+uv run pipa-statute-graph-rag extract --model gpt-6.1-terra
+uv run pipa-statute-graph-rag extract --model gpt-6-luna --ids law:15 law:35
+```
+
 테스트
 
 ```bash
