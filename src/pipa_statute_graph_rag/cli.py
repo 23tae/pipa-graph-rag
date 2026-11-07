@@ -176,43 +176,37 @@ def main() -> None:
         print(f"노드 {nodes}")
         print(f"관계 {edges}")
     elif args.command == "ask":
-        from .answer import OpenAIAnswerer, ask
-        from .collect import load_articles
         from .graph.loader import connect
-        from .retrieval import Mode, build_index, retrieve
-        from .retrieval.neo4j_neighbors import concept_neighbors, reference_neighbors
+        from .query import QueryEngine
+        from .retrieval import Mode
 
-        articles = load_articles(DATA_DIR / "articles.json")
-        by_id = {a.id: a for a in articles}
-        mode = Mode(args.mode)
-        driver = connect() if mode != Mode.KEYWORD else None
+        driver = connect()
         try:
-            retrieval = retrieve(
-                build_index(articles),
+            engine = QueryEngine.from_graph(driver)
+            result = engine.run(
                 args.question,
-                mode=mode,
+                mode=Mode(args.mode),
                 top_k=args.top_k,
                 depth=args.depth,
-                references=reference_neighbors(driver) if driver else None,
-                concepts=concept_neighbors(driver, args.max_entity_degree) if driver else None,
+                max_entity_degree=args.max_entity_degree,
+                answer=not args.no_answer,
             )
         finally:
-            if driver:
-                driver.close()
+            driver.close()
+        retrieval = result.retrieval
         expansion = retrieval.expansion
-        print(f"가져온 조문 {len(expansion.articles)}개 (모드 {mode.value}, 깊이 {args.depth})")
+        print(f"가져온 조문 {len(expansion.articles)}개 (모드 {retrieval.mode.value}, 깊이 {retrieval.depth})")
         for article_id in expansion.articles:
-            title = by_id[article_id].title
             if article_id in retrieval.scores:
                 how = f"키워드 검색 {retrieval.scores[article_id]:.1f}"
             else:
                 reach = expansion.reached[article_id]
                 how = f"{reach.source}에서 {reach.via} (깊이 {reach.depth})"
-            print(f"  {article_id} {title} <- {how}")
-        if not args.no_answer:
-            result = ask(OpenAIAnswerer(), args.question, [by_id[i] for i in expansion.articles])
-            print(f"\n답변: {result.answer}")
-            print(f"근거 조문: {', '.join(result.citations) or '없음'}")
-            if result.invalid_citations:
-                print(f"가져오지 않은 조문을 인용함: {', '.join(result.invalid_citations)}")
-            print(f"토큰 입력 {result.input_tokens} / 출력 {result.output_tokens}")
+            print(f"  {article_id} {engine.articles[article_id].title} <- {how}")
+        if result.answer:
+            answer = result.answer
+            print(f"\n답변: {answer.answer}")
+            print(f"근거 조문: {', '.join(answer.citations) or '없음'}")
+            if answer.invalid_citations:
+                print(f"가져오지 않은 조문을 인용함: {', '.join(answer.invalid_citations)}")
+            print(f"토큰 입력 {answer.input_tokens} / 출력 {answer.output_tokens}")
