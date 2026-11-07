@@ -58,7 +58,7 @@
 {"key":"decree:35#1","supported":true,"reason":"고유식별정보의 처리가 수반되는 파일을 직접 말한다"}
 {"key":"law:11#6","supported":true,"reason":"개인정보처리자를 대상으로 조사를 실시할 수 있다고 직접 말한다"}
 {"key":"decree:62-2#15","supported":true,"reason":"주민등록번호가 포함된 자료를 처리할 수 있다고 직접 말한다"}
-{"key":"law:25-2#0","supported":false,"reason":"인용은 촬영 금지이고 주장은 수행한다는 것이라 반대다"}
+{"key":"law:25-2#0","supported":true,"reason":"인용이 각 호의 경우를 제외하고는 촬영하여서는 아니 된다고 해서, 각 호의 경우에는 촬영할 수 있다"}
 {"key":"law:15#1","supported":true,"reason":"개인정보처리자가 수집 목적의 범위에서 이용할 수 있다고 직접 말한다"}
 {"key":"decree:32#3","supported":true,"reason":"개인정보처리자가 보호책임자를 지정해야 한다고 직접 말한다"}
 {"key":"law:49#15","supported":true,"reason":"분쟁조정위원회의 의결로 처리기간을 연장할 수 있다고 직접 말한다"}
@@ -72,7 +72,7 @@
 {"key":"law:18#12","supported":true,"reason":"정보주체에게 알려야 한다고 직접 말한다"}
 {"key":"law:35-2#5","supported":true,"reason":"해당 정보를 전송하여야 한다고 직접 말한다"}
 {"key":"law:47#5","supported":true,"reason":"당사자 또는 그 대리인에게 송달하여야 한다고 직접 말한다"}
-{"key":"law:24-2#0","supported":false,"reason":"인용은 처리 금지이고 주장은 수행한다는 것이라 반대다"}
+{"key":"law:24-2#0","supported":true,"reason":"인용이 각 호의 경우를 제외하고는 처리할 수 없다고 해서, 각 호의 경우에는 처리할 수 있다"}
 {"key":"decree:42-16#9","supported":false,"reason":"제3자대상정보전송자는 제출 의무를 지는 쪽이고 상대방이 아니다. 방향이 다르다"}
 {"key":"decree:62-2#5","supported":true,"reason":"운전면허의 면허번호가 포함된 자료를 처리할 수 있다고 직접 말한다"}
 {"key":"law:37#22","supported":false,"reason":"인용에 정보주체가 상대방으로 나오지 않는다"}
