@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 
 DATA_DIR = Path("data/processed")
 COMPARISON_DIR = Path("data/judge-comparison")
+EVALUATION_DIR = Path("data/evaluation")
 
 
 def main() -> None:
@@ -80,6 +81,10 @@ def main() -> None:
     sample_cmd.add_argument("--seed", type=int, default=20261107)
 
     sub.add_parser("judge-compare", help="표본에 두 판정기를 돌려 라벨과 대조한다")
+
+    eval_cmd = sub.add_parser("evaluate-search", help="질문과 정답 조문으로 검색 설정을 비교한다")
+    eval_cmd.add_argument("--answer", action="store_true", help="답변도 만들어 인용을 정답과 대조한다")
+    eval_cmd.add_argument("--workers", type=int, default=4)
 
     args = parser.parse_args()
     if args.command == "collect":
@@ -277,3 +282,37 @@ def main() -> None:
             by_judge[name] = {j.key: j.probability for j in judgments}
             print(format_metrics(name, evaluate(labels, by_judge[name], strata), judgments))
         print(format_difference("decisions", "jev", compare_judges(labels, by_judge["decisions"], by_judge["jev"])))
+    elif args.command == "evaluate-search":
+        from .evaluation import (
+            bootstrap_difference,
+            conditions,
+            evaluate_all,
+            format_summary,
+            load_questions,
+            summarize,
+        )
+        from .graph.loader import connect
+        from .query import QueryEngine
+
+        questions = load_questions(EVALUATION_DIR / "questions.jsonl")
+        driver = connect()
+        try:
+            results = evaluate_all(
+                QueryEngine.from_graph(driver), questions, conditions(), answer=args.answer, workers=args.workers
+            )
+        finally:
+            driver.close()
+        name = "results-answer.jsonl" if args.answer else "results.jsonl"
+        (EVALUATION_DIR / name).write_text(
+            "".join(r.model_dump_json() + "\n" for r in results), encoding="utf-8"
+        )
+        print(format_summary(summarize(results)))
+        by_condition = {}
+        for r in results:
+            by_condition.setdefault(r.condition, {})[r.question_id] = r
+        for base, other in (("keyword", "references/d1"), ("references/d1", "references+concepts/d1")):
+            for metric in ("recall_required", "precision"):
+                a = [getattr(by_condition[base][q.id], metric) for q in questions]
+                b = [getattr(by_condition[other][q.id], metric) for q in questions]
+                value, low, high = bootstrap_difference(a, b)
+                print(f"{other} − {base} {metric}: {value:+.3f} [{low:+.3f}, {high:+.3f}]")
