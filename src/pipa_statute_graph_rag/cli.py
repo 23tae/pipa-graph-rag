@@ -1,9 +1,11 @@
 import argparse
+import json
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 DATA_DIR = Path("data/processed")
+COMPARISON_DIR = Path("data/judge-comparison")
 
 
 def main() -> None:
@@ -71,6 +73,13 @@ def main() -> None:
         help="개념 연결 확장에서, 이 수 이상의 조문이 언급하는 개체는 건너뛴다. 없으면 건너뛰지 않는다",
     )
     ask_cmd.add_argument("--no-answer", action="store_true", help="조문만 찾고 답변은 만들지 않는다")
+
+    sample_cmd = sub.add_parser("judge-sample", help="판정기 비교용 관계 표본을 판정 확률 구간별로 뽑는다")
+    sample_cmd.add_argument("--model", required=True, help="추출 결과의 모델 ID")
+    sample_cmd.add_argument("--per-stratum", type=int, default=30, help="구간(0.1 미만, 0.1~0.9, 0.9 이상)마다 뽑을 수")
+    sample_cmd.add_argument("--seed", type=int, default=20261107)
+
+    sub.add_parser("judge-compare", help="표본에 두 판정기를 돌려 라벨과 대조한다")
 
     args = parser.parse_args()
     if args.command == "collect":
@@ -210,3 +219,61 @@ def main() -> None:
             if answer.invalid_citations:
                 print(f"가져오지 않은 조문을 인용함: {', '.join(answer.invalid_citations)}")
             print(f"토큰 입력 {answer.input_tokens} / 출력 {answer.output_tokens}")
+    elif args.command == "judge-sample":
+        from .classify.comparison import flatten, probabilities_by_key, stratified_sample, write_jsonl
+        from .classify.support import load_support
+        from .extraction.pipeline import load_records
+        from .extraction.prompt import LATEST_PROMPT_VERSION
+
+        version = LATEST_PROMPT_VERSION
+        extractions = [
+            r.extraction for r in load_records(DATA_DIR / "extractions" / f"{args.model}-{version}.jsonl")
+        ]
+        support = load_support(DATA_DIR / "support" / f"{args.model}-{version}-decisions.jsonl")
+        sample, strata = stratified_sample(
+            flatten(extractions), probabilities_by_key(extractions, support), args.per_stratum, args.seed
+        )
+        write_jsonl(COMPARISON_DIR / "sample.jsonl", sample)
+        (COMPARISON_DIR / "strata.json").write_text(
+            json.dumps(strata, ensure_ascii=False, indent=1), encoding="utf-8"
+        )
+        print(f"표본 {len(sample)}개를 {COMPARISON_DIR}에 저장했다(구간 정보는 strata.json)")
+    elif args.command == "judge-compare":
+        from .classify.comparison import (
+            Judgment,
+            Label,
+            Relation,
+            compare_judges,
+            evaluate,
+            format_difference,
+            format_metrics,
+            read_jsonl,
+            run_judge,
+            write_jsonl,
+        )
+        from .collect import load_articles
+
+        sample = read_jsonl(COMPARISON_DIR / "sample.jsonl", Relation)
+        strata = json.loads((COMPARISON_DIR / "strata.json").read_text(encoding="utf-8"))
+        labels = {l.key: l.supported for l in read_jsonl(COMPARISON_DIR / "labels.jsonl", Label)}
+        missing = [r.key for r in sample if r.key not in labels]
+        if missing:
+            raise SystemExit(f"라벨이 없는 관계 {len(missing)}개: {missing[:5]}")
+        articles = {a.id: a for a in load_articles(DATA_DIR / "articles.json")}
+        by_judge = {}
+        for name in ("decisions", "jev"):
+            path = COMPARISON_DIR / f"judgments-{name}.jsonl"
+            if not path.exists():
+                if name == "jev":
+                    from .classify.jev import JevJudge
+
+                    judge = JevJudge()
+                else:
+                    from .classify.decisions import DecisionsJudge
+
+                    judge = DecisionsJudge()
+                write_jsonl(path, run_judge(judge, articles, sample))
+            judgments = read_jsonl(path, Judgment)
+            by_judge[name] = {j.key: j.probability for j in judgments}
+            print(format_metrics(name, evaluate(labels, by_judge[name], strata), judgments))
+        print(format_difference("decisions", "jev", compare_judges(labels, by_judge["decisions"], by_judge["jev"])))
