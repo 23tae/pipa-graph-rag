@@ -128,7 +128,7 @@ uv run pipa-statute-graph-rag evaluate-search --answer --conditions keyword refe
 | `references`, 깊이 1 | 20.8 | 0.913 |
 | `references+concepts`, 깊이 1, `--max-entity-degree 50` (기본) | 52.5 | 1.000 |
 
-판정기 두 개(Decisions API, Jev)의 정확도 비교는 `judge-sample`과 `judge-compare`로 한다. 라벨 90개로 쟀을 때 정확도는 둘 다 약 75%였고 차이를 구분할 수 없었다.
+판정기 두 개(Decisions API, Jev)의 정확도 비교는 `judge-sample`과 `judge-compare`로 한다. 라벨 90개로 쟀을 때 정확도는 둘 다 약 78%였고 차이를 구분할 수 없었다.
 
 ## 그래프 구조
 
