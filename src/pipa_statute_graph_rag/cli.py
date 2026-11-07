@@ -28,6 +28,13 @@ def main() -> None:
         "--prompt-version", default=None, help="extraction/prompts의 버전. 없으면 최신 버전"
     )
 
+    graph_cmd = sub.add_parser("load-graph", help="조문, 조문 관계, 추출 결과를 Neo4j에 적재한다")
+    graph_cmd.add_argument("--model", required=True, help="적재할 추출 결과의 모델 ID")
+    graph_cmd.add_argument(
+        "--prompt-version", default=None, help="적재할 추출 결과의 프롬프트 버전. 없으면 최신 버전"
+    )
+    graph_cmd.add_argument("--reset", action="store_true", help="적재 전에 Neo4j의 모든 노드를 지운다")
+
     args = parser.parse_args()
     if args.command == "collect":
         from .collect import collect
@@ -65,3 +72,27 @@ def main() -> None:
         )
         for article_id, error in failures:
             print(f"실패 {article_id}: {error}")
+    elif args.command == "load-graph":
+        from .collect import load_articles
+        from .extraction.pipeline import load_records
+        from .extraction.prompt import LATEST_PROMPT_VERSION
+        from .graph.loader import connect, count_graph, load_graph
+        from .graph.model import build_graph
+        from .references import load_references
+
+        version = args.prompt_version or LATEST_PROMPT_VERSION
+        records = load_records(DATA_DIR / "extractions" / f"{args.model}-{version}.jsonl")
+        data = build_graph(
+            load_articles(DATA_DIR / "articles.json"),
+            load_references(DATA_DIR / "references.json"),
+            [r.extraction for r in records],
+        )
+        driver = connect()
+        try:
+            load_graph(driver, data, reset=args.reset)
+            nodes, edges = count_graph(driver)
+        finally:
+            driver.close()
+        print(f"제외 {data.skipped}")
+        print(f"노드 {nodes}")
+        print(f"관계 {edges}")

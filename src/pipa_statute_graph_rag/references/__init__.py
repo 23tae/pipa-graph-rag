@@ -16,6 +16,10 @@ def build_references(articles: list[Article], *, quoted_only: bool = False) -> l
     return references + derive_delegations(references, by_id, quoted_only=quoted_only)
 
 
+def load_references(path: Path) -> list[ArticleReference]:
+    return [ArticleReference.model_validate(r) for r in json.loads(path.read_text(encoding="utf-8"))]
+
+
 def save_references(references: list[ArticleReference], path: Path) -> None:
     payload = json.dumps([r.model_dump(mode="json") for r in references], ensure_ascii=False, indent=2)
     path.parent.mkdir(parents=True, exist_ok=True)

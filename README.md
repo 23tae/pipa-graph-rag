@@ -46,6 +46,23 @@ uv run pipa-statute-graph-rag extract --model gpt-6.1-terra
 uv run pipa-statute-graph-rag extract --model gpt-6-luna --ids law:15 law:35
 ```
 
+그래프 적재: 조문, 조문 관계, 개념 관계를 Neo4j에 넣는다. 본문이 "삭제"뿐인 조문은 넣지 않는다. 같은 데이터를 다시 넣어도 중복되지 않으며, `--reset`을 주면 Neo4j의 모든 노드를 지우고 다시 넣는다.
+
+```bash
+uv run pipa-statute-graph-rag load-graph --model gpt-6-luna --reset
+```
+
+- 노드: `Article`(조문), `Role`, `ProcessingActivity`, `DataCategory`, `Purpose`, `Deontic`(개체)
+- 조문 사이 관계: `REFERS_TO`, `IMPLEMENTS`, `DELEGATES_TO`, `APPLIES_MUTATIS_MUTANDIS`, `EXCEPTION_TO`
+- 개념 관계: `PERFORMS`, `ACTS_ON`, `HAS_PURPOSE`, `BEARS`, `COUNTERPARTY`, `CONCERNS_ACTIVITY`, `CONCERNS_DATA`, `DESCRIBED_BY`. 모든 관계에 `quote`(원문 인용)가 있고, 개념 관계에는 출처 조문 `article_id`도 있다.
+- `MENTIONS`: 조문이 개체를 언급한다.
+
+Neo4j Browser에서 예를 들어 본법 제24조가 위임한 시행령 조문을 조회한다.
+
+```cypher
+MATCH (:Article {id: 'law:24'})-[:DELEGATES_TO]->(d) RETURN d.id, d.title
+```
+
 테스트
 
 ```bash
