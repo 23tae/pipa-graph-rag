@@ -54,6 +54,24 @@ def main() -> None:
         "--judge", choices=["decisions", "jev"], default="decisions", help="--min-support에 쓸 판정 결과"
     )
 
+    ask_cmd = sub.add_parser("ask", help="질문에 가져온 조문만 근거로 답한다")
+    ask_cmd.add_argument("question")
+    ask_cmd.add_argument(
+        "--mode",
+        choices=["keyword", "references", "references+concepts"],
+        default="references+concepts",
+        help="keyword: 키워드 검색만, references: 조문 사이 관계로 확장, references+concepts: 개념 연결로도 확장",
+    )
+    ask_cmd.add_argument("--depth", type=int, default=1, help="확장 단계 수")
+    ask_cmd.add_argument("--top-k", type=int, default=3, help="키워드 검색으로 가져올 시드 조문 수")
+    ask_cmd.add_argument(
+        "--max-entity-degree",
+        type=int,
+        default=None,
+        help="개념 연결 확장에서, 이 수 이상의 조문이 언급하는 개체는 건너뛴다. 없으면 건너뛰지 않는다",
+    )
+    ask_cmd.add_argument("--no-answer", action="store_true", help="조문만 찾고 답변은 만들지 않는다")
+
     args = parser.parse_args()
     if args.command == "collect":
         from .collect import collect
@@ -157,3 +175,44 @@ def main() -> None:
         print(f"제외 {data.skipped}")
         print(f"노드 {nodes}")
         print(f"관계 {edges}")
+    elif args.command == "ask":
+        from .answer import OpenAIAnswerer, ask
+        from .collect import load_articles
+        from .graph.loader import connect
+        from .retrieval import Mode, build_index, retrieve
+        from .retrieval.neo4j_neighbors import concept_neighbors, reference_neighbors
+
+        articles = load_articles(DATA_DIR / "articles.json")
+        by_id = {a.id: a for a in articles}
+        mode = Mode(args.mode)
+        driver = connect() if mode != Mode.KEYWORD else None
+        try:
+            retrieval = retrieve(
+                build_index(articles),
+                args.question,
+                mode=mode,
+                top_k=args.top_k,
+                depth=args.depth,
+                references=reference_neighbors(driver) if driver else None,
+                concepts=concept_neighbors(driver, args.max_entity_degree) if driver else None,
+            )
+        finally:
+            if driver:
+                driver.close()
+        expansion = retrieval.expansion
+        print(f"가져온 조문 {len(expansion.articles)}개 (모드 {mode.value}, 깊이 {args.depth})")
+        for article_id in expansion.articles:
+            title = by_id[article_id].title
+            if article_id in retrieval.scores:
+                how = f"키워드 검색 {retrieval.scores[article_id]:.1f}"
+            else:
+                reach = expansion.reached[article_id]
+                how = f"{reach.source}에서 {reach.via} (깊이 {reach.depth})"
+            print(f"  {article_id} {title} <- {how}")
+        if not args.no_answer:
+            result = ask(OpenAIAnswerer(), args.question, [by_id[i] for i in expansion.articles])
+            print(f"\n답변: {result.answer}")
+            print(f"근거 조문: {', '.join(result.citations) or '없음'}")
+            if result.invalid_citations:
+                print(f"가져오지 않은 조문을 인용함: {', '.join(result.invalid_citations)}")
+            print(f"토큰 입력 {result.input_tokens} / 출력 {result.output_tokens}")
