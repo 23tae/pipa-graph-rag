@@ -27,6 +27,17 @@ docker compose up -d
 
 Neo4j Browser: http://localhost:7474
 
+## 샘플로 바로 써 보기
+
+추출과 판정(LLM 호출) 없이, 저장소의 샘플 그래프(유출 통지 조문 7개)로 질의를 해볼 수 있다. `--reset`은 Neo4j의 모든 노드를 지우고 적재한다. `--no-answer`를 주면 OpenAI API 키 없이 가져온 조문만 본다.
+
+```bash
+uv run pipa-statute-graph-rag import-graph --file data/sample/graph-sample.json --reset
+uv run pipa-statute-graph-rag ask "개인정보 유출 사실을 알게 되면 정보주체에게 언제까지 통지해야 하나요?" --no-answer
+```
+
+전체 그래프는 `export-graph`로 JSON 파일로 내보내고, `import-graph --file`로 적재한다.
+
 ## 사용법
 
 아래 순서대로 실행한다. 각 단계의 결과는 `data/processed/`에 저장되고, 다시 실행하면 저장되지 않은 조문만 처리한다.
