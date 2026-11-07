@@ -13,6 +13,7 @@ from .config import (
     EXTRACTION_MODEL,
     EXTRACTION_PROMPT_VERSION,
     GRAPH_DIR,
+    MIN_SUPPORT,
     QUERY_DEPTH,
     QUERY_MAX_ENTITY_DEGREE,
     QUERY_MODE,
@@ -83,8 +84,8 @@ def main() -> None:
     graph_cmd.add_argument(
         "--min-support",
         type=float,
-        default=None,
-        help="판정 확률이 이 값 이상인 개념 관계만 적재한다. 없으면 모두 적재한다",
+        default=MIN_SUPPORT,
+        help=f"판정 확률이 이 값 이상인 개념 관계만 적재한다. 0이면 모두 적재한다. 기본 {MIN_SUPPORT}",
     )
     graph_cmd.add_argument(
         "--judge", choices=["decisions", "jev"], default=DEFAULT_JUDGE, help="--min-support에 쓸 판정 결과"
@@ -204,7 +205,7 @@ def main() -> None:
         version = args.prompt_version
         extraction_path, model = _resolve_extraction(args.extraction_model, version)
         extractions = [r.extraction for r in load_records(extraction_path)]
-        if args.min_support is not None:
+        if args.min_support:
             from .classify.support import filter_by_support, load_support
 
             support = load_support(DATA_DIR / "support" / f"{model}-{version}-{args.judge}.jsonl")

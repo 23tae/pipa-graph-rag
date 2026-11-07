@@ -93,11 +93,11 @@ uv run pipa-statute-graph-rag judge
 조문, 조문 관계, 개념 관계를 Neo4j에 넣는다. 본문이 "삭제"뿐인 조문은 넣지 않는다.
 
 ```bash
-uv run pipa-statute-graph-rag load-graph --reset --min-support 0.1
+uv run pipa-statute-graph-rag load-graph --reset
 ```
 
 - `--reset`: 적재 전에 Neo4j의 모든 노드를 지운다. 없으면 같은 데이터를 다시 넣어도 중복되지 않는다.
-- `--min-support`: 판정 확률이 이 값 이상인 개념 관계만 넣는다.
+- `--min-support`: 판정 확률이 이 값 이상인 개념 관계만 넣는다. 기본값은 0.1이고, 0이면 판정으로 거르지 않고 모두 넣는다.
 
 ### 6. 질의
 
