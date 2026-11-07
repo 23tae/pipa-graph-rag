@@ -152,6 +152,18 @@ MATCH (:Article {id: 'law:24'})-[:DELEGATES_TO]->(d) RETURN d.id, d.title
 uv run pytest
 ```
 
+## 한계
+
+- 본법과 시행령(현행)만 다룬다. 판례, 법령해석례, 위원회 결정은 없다.
+- 시행령이 가리키는 별표의 본문은 수집하지 않는다.
+- 개념 관계는 LLM이 추출한다. 지지 여부 판정으로 일부를 걸러도 틀린 관계가 남는다.
+- 법 위반 여부는 판정하지 않는다.
+- 평가는 질문 23개 규모라 작은 차이는 구분하지 못한다.
+
+## 출처와 유의 사항
+
+법령 본문의 출처는 법제처이다. 이 저장소의 조문 데이터는 가공본이라 공식 본문이 아니며, 정확한 내용은 [국가법령정보센터](https://www.law.go.kr)에서 확인한다. 질의 결과는 법률 자문이 아니다.
+
 ## 참고 문헌
 
 - Monica Palmirani, Michele Martoni, Arianna Rossi, Cesare Bartolini, Livio Robaldo. "PrOnto: Privacy Ontology for Legal Reasoning." Springer, 2018. [(링크)](https://link.springer.com/chapter/10.1007/978-3-319-98349-3_11)
