@@ -50,6 +50,8 @@ class QuestionResult(BaseModel):
     citations: list[str] | None = None
     citation_precision: float | None = None  # 인용한 조문 중 정답(필수·참고)의 비율
     citation_recall: float | None = None  # 필수 정답 중 인용한 비율
+    input_tokens: int | None = None
+    output_tokens: int | None = None
 
 
 def conditions() -> list[Condition]:
@@ -98,6 +100,8 @@ def evaluate_question(
         row.citations = result.answer.citations
         row.citation_precision = len(cited & everything) / len(cited) if cited else 0.0
         row.citation_recall = _ratio(cited, required)
+        row.input_tokens = result.answer.input_tokens
+        row.output_tokens = result.answer.output_tokens
     return row
 
 
