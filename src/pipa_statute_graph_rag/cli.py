@@ -70,8 +70,8 @@ def main() -> None:
     ask_cmd.add_argument(
         "--max-entity-degree",
         type=int,
-        default=None,
-        help="개념 연결 확장에서, 이 수 이상의 조문이 언급하는 개체는 건너뛴다. 없으면 건너뛰지 않는다",
+        default=50,
+        help="개념 연결 확장에서, 이 수 이상의 조문이 언급하는 개체는 건너뛴다. 0이면 건너뛰지 않는다",
     )
     ask_cmd.add_argument("--no-answer", action="store_true", help="조문만 찾고 답변은 만들지 않는다")
 
@@ -203,7 +203,7 @@ def main() -> None:
                 mode=Mode(args.mode),
                 top_k=args.top_k,
                 depth=args.depth,
-                max_entity_degree=args.max_entity_degree,
+                max_entity_degree=args.max_entity_degree or None,
                 answer=not args.no_answer,
             )
         finally:

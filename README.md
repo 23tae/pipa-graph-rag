@@ -97,7 +97,7 @@ uv run pipa-statute-graph-rag ask "개인정보 유출 사실을 알게 되면 �
 | `--mode` | `keyword`(키워드 검색만), `references`(조문 사이 관계로 확장), `references+concepts`(개념 연결로도 확장) | `references+concepts` |
 | `--depth` | 확장 단계 수 | 1 |
 | `--top-k` | 키워드 검색으로 가져올 시드 조문 수 | 3 |
-| `--max-entity-degree` | 개념 연결 확장에서 N개 이상의 조문이 언급하는 개체는 건너뜀 | 건너뛰지 않음 |
+| `--max-entity-degree` | 개념 연결 확장에서 N개 이상의 조문이 언급하는 개체는 건너뜀. 0이면 건너뛰지 않음 | 50 |
 | `--no-answer` | 조문만 찾고 답변은 만들지 않음 | |
 
 ## 그래프 구조
