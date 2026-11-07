@@ -4,11 +4,11 @@ import pytest
 
 from pipa_statute_graph_rag.answer import AnswerOutput, ask, check_citations
 from pipa_statute_graph_rag.answer.prompt import (
-    LATEST_PROMPT_VERSION,
     available_versions,
     build_user_message,
     load_prompt,
 )
+from pipa_statute_graph_rag.config import ANSWER_PROMPT_VERSION
 from pipa_statute_graph_rag.schema import Article
 
 # 만든 프롬프트 버전의 본문은 고치지 않는다. 바꾸려면 새 버전을 추가하고 해시를 더한다.
@@ -66,7 +66,7 @@ def test_user_message_labels_each_article_with_its_id_and_law_name():
 
 def test_prompt_versions_are_pinned():
     assert set(available_versions()) == set(PINNED_SHA256)
-    assert LATEST_PROMPT_VERSION in PINNED_SHA256
+    assert ANSWER_PROMPT_VERSION in PINNED_SHA256
     for version, expected in PINNED_SHA256.items():
         assert hashlib.sha256(load_prompt(version).encode("utf-8")).hexdigest() == expected
 

@@ -7,12 +7,9 @@ from typing import Protocol
 
 from pydantic import BaseModel
 
-from ..config import ANSWER_MODEL
+from ..config import ANSWER_MODEL, ANSWER_PROMPT_VERSION, MAX_OUTPUT_TOKENS
 from ..schema import Article
-from .prompt import LATEST_PROMPT_VERSION, build_user_message, load_prompt
-
-# 추론 토큰과 출력 토큰을 합친 한도. 추론 모델 가이드가 최소 25,000토큰을 확보하라고 권한다.
-MAX_OUTPUT_TOKENS = 25_000
+from .prompt import build_user_message, load_prompt
 
 
 class AnswerOutput(BaseModel):
@@ -69,7 +66,7 @@ def ask(answerer: Answerer, question: str, articles: list[Article]) -> Answer:
 
 
 class OpenAIAnswerer:
-    def __init__(self, model: str = ANSWER_MODEL, prompt_version: str = LATEST_PROMPT_VERSION, client=None):
+    def __init__(self, model: str = ANSWER_MODEL, prompt_version: str = ANSWER_PROMPT_VERSION, client=None):
         from openai import OpenAI
 
         self.model = model

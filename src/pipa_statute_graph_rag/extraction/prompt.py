@@ -6,9 +6,6 @@ from importlib import resources
 
 from ..schema import Article
 
-LATEST_PROMPT_VERSION = "v3"
-
-
 def available_versions() -> list[str]:
     files = resources.files(__package__).joinpath("prompts")
     return sorted(p.name.removesuffix(".txt") for p in files.iterdir() if p.name.endswith(".txt"))

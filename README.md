@@ -27,6 +27,8 @@ docker compose up -d
 
 Neo4j Browser: http://localhost:7474
 
+사용하는 모델, 프롬프트 버전, 기본 판정기, 질의 기본값, 병렬 작업 수, 데이터 폴더는 `src/pipa_statute_graph_rag/config.py`에서 바꾼다. 명령줄 옵션을 주면 그 값이 우선한다.
+
 ## 샘플로 바로 써 보기
 
 추출과 판정(LLM 호출) 없이, 저장소의 샘플 그래프(유출 통지 조문 7개)로 질의를 해볼 수 있다. `--reset`은 Neo4j의 모든 노드를 지우고 적재한다. `--no-answer`를 주면 OpenAI API 키 없이 가져온 조문만 본다.

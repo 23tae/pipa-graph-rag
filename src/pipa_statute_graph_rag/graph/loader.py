@@ -6,6 +6,7 @@ import os
 
 from neo4j import Driver, GraphDatabase
 
+from ..config import NEO4J_URI, NEO4J_USER
 from ..schema import ALLOWED_ENDPOINTS, ConceptRelationKind
 from .model import ENTITY_LABELS, NODE_LABELS, GraphData
 
@@ -24,8 +25,8 @@ assert set(_CONCEPT_ENDPOINTS) == {k.value.upper() for k in ConceptRelationKind}
 
 def connect() -> Driver:
     return GraphDatabase.driver(
-        os.environ.get("NEO4J_URI", "bolt://localhost:7687"),
-        auth=(os.environ.get("NEO4J_USER", "neo4j"), os.environ["NEO4J_PASSWORD"]),
+        os.environ.get("NEO4J_URI", NEO4J_URI),
+        auth=(os.environ.get("NEO4J_USER", NEO4J_USER), os.environ["NEO4J_PASSWORD"]),
     )
 
 

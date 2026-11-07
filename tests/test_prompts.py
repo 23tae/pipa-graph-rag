@@ -2,11 +2,8 @@ import hashlib
 
 import pytest
 
-from pipa_statute_graph_rag.extraction.prompt import (
-    LATEST_PROMPT_VERSION,
-    available_versions,
-    load_prompt,
-)
+from pipa_statute_graph_rag.config import EXTRACTION_PROMPT_VERSION
+from pipa_statute_graph_rag.extraction.prompt import available_versions, load_prompt
 from pipa_statute_graph_rag.schema import ALLOWED_ENDPOINTS
 
 # 만든 버전의 본문은 고치지 않는다. 이 값이 바뀌면 그 버전으로 만든 결과를 다시 만들 수 없다.
@@ -31,7 +28,7 @@ def test_version_text_is_unchanged(version: str):
 
 
 def test_latest_version_exists():
-    assert LATEST_PROMPT_VERSION in available_versions()
+    assert EXTRACTION_PROMPT_VERSION in available_versions()
 
 
 def test_unknown_version_names_available_ones():
@@ -40,6 +37,6 @@ def test_unknown_version_names_available_ones():
 
 
 def test_latest_prompt_lists_every_allowed_relation():
-    prompt = load_prompt(LATEST_PROMPT_VERSION)
+    prompt = load_prompt(EXTRACTION_PROMPT_VERSION)
     for kind in ALLOWED_ENDPOINTS:
         assert f"- {kind.value}:" in prompt

@@ -7,10 +7,10 @@ import os
 
 import httpx
 
-from ..config import JEV_MODEL
+from ..config import JEV_MODEL, SUPPORT_PROMPT_VERSION
 from ..schema import Article
 from .base import JudgeFailed, JudgeResult, SupportItem
-from .prompt import LATEST_SUPPORT_PROMPT_VERSION, load_prompt
+from .prompt import load_prompt
 
 URL = "https://openrouter.ai/api/alpha/decisions"
 MAX_QUESTIONS = 50  # 문서에 한도가 없어서 보수적으로 나눈다
@@ -19,7 +19,7 @@ MAX_QUESTIONS = 50  # 문서에 한도가 없어서 보수적으로 나눈다
 class JevJudge:
     def __init__(
         self,
-        prompt_version: str = LATEST_SUPPORT_PROMPT_VERSION,
+        prompt_version: str = SUPPORT_PROMPT_VERSION,
         client: httpx.Client | None = None,
     ):
         self.name = f"jev/{JEV_MODEL}"

@@ -6,12 +6,10 @@ import hashlib
 
 from openai import OpenAI
 
+from ..config import EXTRACTION_PROMPT_VERSION, MAX_OUTPUT_TOKENS
 from ..extraction.models import ExtractorResult, RawExtraction
-from ..extraction.prompt import LATEST_PROMPT_VERSION, build_user_message, load_prompt
+from ..extraction.prompt import build_user_message, load_prompt
 from ..schema import Article
-
-# 추론 토큰과 출력 토큰을 합친 한도. 추론 모델 가이드가 최소 25,000토큰을 확보하라고 권한다.
-MAX_OUTPUT_TOKENS = 25_000
 
 
 class ExtractionFailed(Exception):
@@ -22,7 +20,7 @@ class OpenAIExtractor:
     def __init__(
         self,
         model: str,
-        prompt_version: str = LATEST_PROMPT_VERSION,
+        prompt_version: str = EXTRACTION_PROMPT_VERSION,
         client: OpenAI | None = None,
     ) -> None:
         self.model = model

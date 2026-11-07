@@ -6,16 +6,16 @@ import hashlib
 
 from openai import OpenAI
 
-from ..config import DECISIONS_MODEL
+from ..config import DECISIONS_MODEL, SUPPORT_PROMPT_VERSION
 from ..schema import Article
 from .base import JudgeFailed, JudgeResult, SupportItem
-from .prompt import LATEST_SUPPORT_PROMPT_VERSION, load_prompt
+from .prompt import load_prompt
 
 MAX_QUESTIONS = 400  # 요청 하나에 넣을 수 있는 질문 수
 
 
 class DecisionsJudge:
-    def __init__(self, prompt_version: str = LATEST_SUPPORT_PROMPT_VERSION, client: OpenAI | None = None):
+    def __init__(self, prompt_version: str = SUPPORT_PROMPT_VERSION, client: OpenAI | None = None):
         self.name = f"decisions/{DECISIONS_MODEL}"
         self.prompt_id = f"classify/support/{prompt_version}"
         self._template = load_prompt("support", prompt_version)

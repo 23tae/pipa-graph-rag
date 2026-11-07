@@ -4,12 +4,21 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from .config import EXTRACTION_MODEL
+from .config import (
+    COMPARISON_DIR,
+    DATA_DIR,
+    DEFAULT_JUDGE,
+    DEFAULT_WORKERS,
+    EVALUATION_DIR,
+    EXTRACTION_MODEL,
+    EXTRACTION_PROMPT_VERSION,
+    GRAPH_DIR,
+    QUERY_DEPTH,
+    QUERY_MAX_ENTITY_DEGREE,
+    QUERY_MODE,
+    QUERY_TOP_K,
+)
 
-DATA_DIR = Path("data/processed")
-COMPARISON_DIR = Path("data/judge-comparison")
-EVALUATION_DIR = Path("data/evaluation")
-GRAPH_DIR = Path("data/graph")
 EXTRACTION_MODEL_HELP = (
     "읽을 추출 결과의 모델 ID. 없으면 그 프롬프트 버전의 파일이 하나뿐일 때 그 파일을, 여럿이면 "
     f"{EXTRACTION_MODEL}의 파일을 쓴다"
@@ -44,25 +53,31 @@ def main() -> None:
         "--model", default=EXTRACTION_MODEL, help=f"OpenAI 모델 ID. 기본 {EXTRACTION_MODEL}"
     )
     extract_cmd.add_argument("--ids", nargs="+", help="추출할 조문 ID. 없으면 전체")
-    extract_cmd.add_argument("--workers", type=int, default=4)
+    extract_cmd.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     extract_cmd.add_argument(
-        "--prompt-version", default=None, help="extraction/prompts의 버전. 없으면 최신 버전"
+        "--prompt-version",
+        default=EXTRACTION_PROMPT_VERSION,
+        help=f"extraction/prompts의 버전. 기본 {EXTRACTION_PROMPT_VERSION}",
     )
 
     judge_cmd = sub.add_parser("judge", help="추출한 관계마다 인용이 뒷받침하는지 판정한다")
     judge_cmd.add_argument("--extraction-model", default=None, help=EXTRACTION_MODEL_HELP)
     judge_cmd.add_argument(
-        "--extraction-prompt-version", default=None, help="판정할 추출 결과의 프롬프트 버전. 없으면 최신 버전"
+        "--extraction-prompt-version",
+        default=EXTRACTION_PROMPT_VERSION,
+        help=f"판정할 추출 결과의 프롬프트 버전. 기본 {EXTRACTION_PROMPT_VERSION}",
     )
-    judge_cmd.add_argument("--workers", type=int, default=4)
+    judge_cmd.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     judge_cmd.add_argument(
-        "--judge", choices=["decisions", "jev"], default="decisions", help="판정기. 기본은 OpenAI Decisions API"
+        "--judge", choices=["decisions", "jev"], default=DEFAULT_JUDGE, help=f"판정기. 기본 {DEFAULT_JUDGE}"
     )
 
     graph_cmd = sub.add_parser("load-graph", help="조문, 조문 관계, 추출 결과를 Neo4j에 적재한다")
     graph_cmd.add_argument("--extraction-model", default=None, help=EXTRACTION_MODEL_HELP)
     graph_cmd.add_argument(
-        "--prompt-version", default=None, help="적재할 추출 결과의 프롬프트 버전. 없으면 최신 버전"
+        "--prompt-version",
+        default=EXTRACTION_PROMPT_VERSION,
+        help=f"적재할 추출 결과의 프롬프트 버전. 기본 {EXTRACTION_PROMPT_VERSION}",
     )
     graph_cmd.add_argument("--reset", action="store_true", help="적재 전에 Neo4j의 모든 노드를 지운다")
     graph_cmd.add_argument(
@@ -72,7 +87,7 @@ def main() -> None:
         help="판정 확률이 이 값 이상인 개념 관계만 적재한다. 없으면 모두 적재한다",
     )
     graph_cmd.add_argument(
-        "--judge", choices=["decisions", "jev"], default="decisions", help="--min-support에 쓸 판정 결과"
+        "--judge", choices=["decisions", "jev"], default=DEFAULT_JUDGE, help="--min-support에 쓸 판정 결과"
     )
 
     export_cmd = sub.add_parser("export-graph", help="Neo4j 그래프를 JSON 파일로 내보낸다")
@@ -88,15 +103,15 @@ def main() -> None:
     ask_cmd.add_argument(
         "--mode",
         choices=["keyword", "references", "references+concepts"],
-        default="references+concepts",
+        default=QUERY_MODE,
         help="keyword: 키워드 검색만, references: 조문 사이 관계로 확장, references+concepts: 개념 연결로도 확장",
     )
-    ask_cmd.add_argument("--depth", type=int, default=1, help="확장 단계 수")
-    ask_cmd.add_argument("--top-k", type=int, default=3, help="키워드 검색으로 가져올 시드 조문 수")
+    ask_cmd.add_argument("--depth", type=int, default=QUERY_DEPTH, help="확장 단계 수")
+    ask_cmd.add_argument("--top-k", type=int, default=QUERY_TOP_K, help="키워드 검색으로 가져올 시드 조문 수")
     ask_cmd.add_argument(
         "--max-entity-degree",
         type=int,
-        default=50,
+        default=QUERY_MAX_ENTITY_DEGREE,
         help="개념 연결 확장에서, 이 수 이상의 조문이 언급하는 개체는 건너뛴다. 0이면 건너뛰지 않는다",
     )
     ask_cmd.add_argument("--no-answer", action="store_true", help="조문만 찾고 답변은 만들지 않는다")
@@ -111,7 +126,7 @@ def main() -> None:
     eval_cmd = sub.add_parser("evaluate-search", help="질문과 정답 조문으로 검색 설정을 비교한다")
     eval_cmd.add_argument("--answer", action="store_true", help="답변도 만들어 인용을 정답과 대조한다")
     eval_cmd.add_argument("--conditions", nargs="+", help="돌릴 조건 이름. 없으면 모든 조건")
-    eval_cmd.add_argument("--workers", type=int, default=4)
+    eval_cmd.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
 
     args = parser.parse_args()
     if args.command == "collect":
@@ -131,13 +146,12 @@ def main() -> None:
     elif args.command == "extract":
         from .collect import load_articles
         from .extraction.pipeline import load_records, run_extraction
-        from .extraction.prompt import LATEST_PROMPT_VERSION
         from .llm.openai_client import OpenAIExtractor
 
         articles = load_articles(DATA_DIR / "articles.json")
         if args.ids:
             articles = [a for a in articles if a.id in set(args.ids)]
-        extractor = OpenAIExtractor(args.model, args.prompt_version or LATEST_PROMPT_VERSION)
+        extractor = OpenAIExtractor(args.model, args.prompt_version)
         out_path = DATA_DIR / "extractions" / f"{args.model}-{extractor.prompt_version}.jsonl"
         saved, failures = run_extraction(articles, extractor, out_path, workers=args.workers)
         records = load_records(out_path)
@@ -154,9 +168,8 @@ def main() -> None:
         from .classify.support import load_support, run_judgment
         from .collect import load_articles
         from .extraction.pipeline import load_records
-        from .extraction.prompt import LATEST_PROMPT_VERSION
 
-        version = args.extraction_prompt_version or LATEST_PROMPT_VERSION
+        version = args.extraction_prompt_version
         extraction_path, model = _resolve_extraction(args.extraction_model, version)
         extractions = {r.article_id: r.extraction for r in load_records(extraction_path)}
         if args.judge == "jev":
@@ -184,12 +197,11 @@ def main() -> None:
     elif args.command == "load-graph":
         from .collect import load_articles
         from .extraction.pipeline import load_records
-        from .extraction.prompt import LATEST_PROMPT_VERSION
         from .graph.loader import connect, count_graph, load_graph
         from .graph.model import build_graph
         from .references import load_references
 
-        version = args.prompt_version or LATEST_PROMPT_VERSION
+        version = args.prompt_version
         extraction_path, model = _resolve_extraction(args.extraction_model, version)
         extractions = [r.extraction for r in load_records(extraction_path)]
         if args.min_support is not None:
@@ -253,9 +265,8 @@ def main() -> None:
         from .classify.comparison import flatten, probabilities_by_key, stratified_sample, write_jsonl
         from .classify.support import load_support
         from .extraction.pipeline import load_records
-        from .extraction.prompt import LATEST_PROMPT_VERSION
 
-        version = LATEST_PROMPT_VERSION
+        version = EXTRACTION_PROMPT_VERSION
         extraction_path, model = _resolve_extraction(args.extraction_model, version)
         extractions = [r.extraction for r in load_records(extraction_path)]
         support = load_support(DATA_DIR / "support" / f"{model}-{version}-decisions.jsonl")
