@@ -4,10 +4,25 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from .config import EXTRACTION_MODEL
+
 DATA_DIR = Path("data/processed")
 COMPARISON_DIR = Path("data/judge-comparison")
 EVALUATION_DIR = Path("data/evaluation")
 GRAPH_DIR = Path("data/graph")
+EXTRACTION_MODEL_HELP = (
+    "읽을 추출 결과의 모델 ID. 없으면 그 프롬프트 버전의 파일이 하나뿐일 때 그 파일을, 여럿이면 "
+    f"{EXTRACTION_MODEL}의 파일을 쓴다"
+)
+
+
+def _resolve_extraction(model: str | None, version: str):
+    from .extraction.pipeline import resolve_extraction_path
+
+    try:
+        return resolve_extraction_path(DATA_DIR / "extractions", version, model, EXTRACTION_MODEL)
+    except FileNotFoundError as error:
+        raise SystemExit(str(error)) from error
 
 
 def main() -> None:
@@ -25,7 +40,9 @@ def main() -> None:
     )
 
     extract_cmd = sub.add_parser("extract", help="LLM으로 조문의 개체와 관계를 추출한다")
-    extract_cmd.add_argument("--model", required=True, help="OpenAI 모델 ID")
+    extract_cmd.add_argument(
+        "--model", default=EXTRACTION_MODEL, help=f"OpenAI 모델 ID. 기본 {EXTRACTION_MODEL}"
+    )
     extract_cmd.add_argument("--ids", nargs="+", help="추출할 조문 ID. 없으면 전체")
     extract_cmd.add_argument("--workers", type=int, default=4)
     extract_cmd.add_argument(
@@ -33,7 +50,7 @@ def main() -> None:
     )
 
     judge_cmd = sub.add_parser("judge", help="추출한 관계마다 인용이 뒷받침하는지 판정한다")
-    judge_cmd.add_argument("--model", required=True, help="판정할 추출 결과의 모델 ID")
+    judge_cmd.add_argument("--extraction-model", default=None, help=EXTRACTION_MODEL_HELP)
     judge_cmd.add_argument(
         "--extraction-prompt-version", default=None, help="판정할 추출 결과의 프롬프트 버전. 없으면 최신 버전"
     )
@@ -43,7 +60,7 @@ def main() -> None:
     )
 
     graph_cmd = sub.add_parser("load-graph", help="조문, 조문 관계, 추출 결과를 Neo4j에 적재한다")
-    graph_cmd.add_argument("--model", required=True, help="적재할 추출 결과의 모델 ID")
+    graph_cmd.add_argument("--extraction-model", default=None, help=EXTRACTION_MODEL_HELP)
     graph_cmd.add_argument(
         "--prompt-version", default=None, help="적재할 추출 결과의 프롬프트 버전. 없으면 최신 버전"
     )
@@ -85,7 +102,7 @@ def main() -> None:
     ask_cmd.add_argument("--no-answer", action="store_true", help="조문만 찾고 답변은 만들지 않는다")
 
     sample_cmd = sub.add_parser("judge-sample", help="판정기 비교용 관계 표본을 판정 확률 구간별로 뽑는다")
-    sample_cmd.add_argument("--model", required=True, help="추출 결과의 모델 ID")
+    sample_cmd.add_argument("--extraction-model", default=None, help=EXTRACTION_MODEL_HELP)
     sample_cmd.add_argument("--per-stratum", type=int, default=30, help="구간(0.1 미만, 0.1~0.9, 0.9 이상)마다 뽑을 수")
     sample_cmd.add_argument("--seed", type=int, default=20261107)
 
@@ -140,10 +157,8 @@ def main() -> None:
         from .extraction.prompt import LATEST_PROMPT_VERSION
 
         version = args.extraction_prompt_version or LATEST_PROMPT_VERSION
-        extractions = {
-            r.article_id: r.extraction
-            for r in load_records(DATA_DIR / "extractions" / f"{args.model}-{version}.jsonl")
-        }
+        extraction_path, model = _resolve_extraction(args.extraction_model, version)
+        extractions = {r.article_id: r.extraction for r in load_records(extraction_path)}
         if args.judge == "jev":
             from .classify.jev import JevJudge
 
@@ -152,7 +167,7 @@ def main() -> None:
             from .classify.decisions import DecisionsJudge
 
             judge = DecisionsJudge()
-        out_path = DATA_DIR / "support" / f"{args.model}-{version}-{args.judge}.jsonl"
+        out_path = DATA_DIR / "support" / f"{model}-{version}-{args.judge}.jsonl"
         saved, failures = run_judgment(
             load_articles(DATA_DIR / "articles.json"), extractions, judge, out_path, workers=args.workers
         )
@@ -175,12 +190,12 @@ def main() -> None:
         from .references import load_references
 
         version = args.prompt_version or LATEST_PROMPT_VERSION
-        records = load_records(DATA_DIR / "extractions" / f"{args.model}-{version}.jsonl")
-        extractions = [r.extraction for r in records]
+        extraction_path, model = _resolve_extraction(args.extraction_model, version)
+        extractions = [r.extraction for r in load_records(extraction_path)]
         if args.min_support is not None:
             from .classify.support import filter_by_support, load_support
 
-            support = load_support(DATA_DIR / "support" / f"{args.model}-{version}-{args.judge}.jsonl")
+            support = load_support(DATA_DIR / "support" / f"{model}-{version}-{args.judge}.jsonl")
             before = sum(len(e.relations) for e in extractions)
             extractions = filter_by_support(extractions, support, args.min_support)
             print(f"판정 확률 {args.min_support} 이상만 적재: 개념 관계 {before} → "
@@ -241,10 +256,9 @@ def main() -> None:
         from .extraction.prompt import LATEST_PROMPT_VERSION
 
         version = LATEST_PROMPT_VERSION
-        extractions = [
-            r.extraction for r in load_records(DATA_DIR / "extractions" / f"{args.model}-{version}.jsonl")
-        ]
-        support = load_support(DATA_DIR / "support" / f"{args.model}-{version}-decisions.jsonl")
+        extraction_path, model = _resolve_extraction(args.extraction_model, version)
+        extractions = [r.extraction for r in load_records(extraction_path)]
+        support = load_support(DATA_DIR / "support" / f"{model}-{version}-decisions.jsonl")
         sample, strata = stratified_sample(
             flatten(extractions), probabilities_by_key(extractions, support), args.per_stratum, args.seed
         )

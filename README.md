@@ -67,10 +67,11 @@ uv run pipa-statute-graph-rag references
 LLM으로 조문마다 역할, 처리 활동, 목적, 권리·의무 같은 개체와 그 관계를 추출한다. 관계마다 원문 인용을 요구하고, 인용이 조문 본문에 없거나 개체 유형이 맞지 않는 관계는 버린다.
 
 ```bash
-uv run pipa-statute-graph-rag extract --model gpt-6-luna
+uv run pipa-statute-graph-rag extract
 ```
 
 - 결과: `extractions/<모델>-<프롬프트 버전>.jsonl`
+- `--model`: 추출에 쓸 OpenAI 모델. 기본값은 `src/pipa_statute_graph_rag/config.py`의 `EXTRACTION_MODEL`이다.
 - `--ids law:15 law:35`: 지정한 조문만 추출한다.
 
 ### 4. 지지 여부 판정
@@ -78,18 +79,19 @@ uv run pipa-statute-graph-rag extract --model gpt-6-luna
 추출한 관계마다 인용이 그 관계를 뒷받침하는지 판정해 확률을 저장한다.
 
 ```bash
-uv run pipa-statute-graph-rag judge --model gpt-6-luna
+uv run pipa-statute-graph-rag judge
 ```
 
 - 결과: `support/<모델>-<프롬프트 버전>-<판정기>.jsonl`
 - `--judge decisions`(OpenAI Decisions API, 기본), `--judge jev`(Jev)
+- `--extraction-model`: 판정할 추출 결과의 모델. 없으면 최신 프롬프트 버전의 추출 결과가 하나뿐일 때 그 파일을, 여럿이면 `EXTRACTION_MODEL`의 파일을 쓴다. 파일이 없으면 오류를 낸다. `load-graph`도 같다.
 
 ### 5. 그래프 적재
 
 조문, 조문 관계, 개념 관계를 Neo4j에 넣는다. 본문이 "삭제"뿐인 조문은 넣지 않는다.
 
 ```bash
-uv run pipa-statute-graph-rag load-graph --model gpt-6-luna --reset --min-support 0.1
+uv run pipa-statute-graph-rag load-graph --reset --min-support 0.1
 ```
 
 - `--reset`: 적재 전에 Neo4j의 모든 노드를 지운다. 없으면 같은 데이터를 다시 넣어도 중복되지 않는다.

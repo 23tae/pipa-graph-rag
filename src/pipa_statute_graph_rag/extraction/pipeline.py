@@ -44,6 +44,23 @@ def load_records(path: Path) -> list[ExtractionRecord]:
     ]
 
 
+def resolve_extraction_path(
+    directory: Path, version: str, model: str | None, default_model: str
+) -> tuple[Path, str]:
+    """이미 만든 추출 결과 파일과 그 모델 ID를 찾는다. 모델을 주면 그 모델의 파일을, 안 주면 그 프롬프트 버전의
+    파일이 하나뿐일 때 그것을, 여럿이면 default_model의 파일을 쓴다. 파일이 없으면 FileNotFoundError다."""
+    suffix = f"-{version}.jsonl"
+    if model is None:
+        candidates = sorted(directory.glob(f"*{suffix}"))
+        path = candidates[0] if len(candidates) == 1 else directory / f"{default_model}{suffix}"
+    else:
+        path = directory / f"{model}{suffix}"
+    if not path.exists():
+        available = ", ".join(sorted(p.name for p in directory.glob("*.jsonl"))) or "없음"
+        raise FileNotFoundError(f"추출 결과 파일이 없다: {path.name} (있는 파일: {available})")
+    return path, path.name[: -len(suffix)]
+
+
 def _extract_one(article: Article, extractor: Extractor) -> ExtractionRecord:
     result = extractor.extract(article)
     gate = apply_gate(article, result.raw)
