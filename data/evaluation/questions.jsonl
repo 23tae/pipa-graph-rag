@@ -1,0 +1,15 @@
+{"id":"q01","question":"정보주체의 동의 없이도 개인정보를 수집하고 이용할 수 있는 경우는 언제인가요?","required":["law:15"],"related":[]}
+{"id":"q02","question":"만 14세 미만 아동의 개인정보를 수집할 때 법정대리인의 동의는 어떻게 확인해야 하나요?","required":["law:22-2","decree:17-2"],"related":[]}
+{"id":"q03","question":"개인정보 처리 업무를 외부 업체에 맡길 때 위탁 계약서에 무엇을 넣어야 하나요?","required":["law:26","decree:28"],"related":[]}
+{"id":"q04","question":"보유기간이 끝난 개인정보는 언제, 어떤 방법으로 파기해야 하나요?","required":["law:21","decree:16"],"related":[]}
+{"id":"q05","question":"어떤 경우에 주민등록번호를 처리할 수 있나요?","required":["law:24-2"],"related":[]}
+{"id":"q06","question":"개인정보 영향평가는 어떤 개인정보파일에 대해 해야 하나요?","required":["law:33","decree:35"],"related":[]}
+{"id":"q07","question":"개인정보를 해외 서버로 옮기려면 어떤 요건을 갖춰야 하나요?","required":["law:28-8"],"related":["decree:29-8","decree:29-9","decree:29-10"]}
+{"id":"q08","question":"개인정보 보호책임자는 누구를 지정해야 하고 자격 요건이 있나요?","required":["law:31","decree:32"],"related":[]}
+{"id":"q09","question":"정보주체가 자신의 개인정보를 다른 곳으로 전송해 달라고 요구할 수 있는 정보는 어떤 것인가요?","required":["law:35-2","decree:42-4"],"related":[]}
+{"id":"q10","question":"과징금은 매출액을 기준으로 어떻게 산정하나요?","required":["law:64-2","decree:60-2"],"related":["decree:60-3"]}
+{"id":"q11","question":"개인정보 처리방침에는 어떤 내용이 들어가야 하나요?","required":["law:30","decree:31"],"related":[]}
+{"id":"q12","question":"공개된 장소에 CCTV를 설치할 수 있는 경우는 언제인가요?","required":["law:25"],"related":["decree:22"]}
+{"id":"q13","question":"정보주체가 자신의 개인정보를 삭제해 달라고 요구하면 처리자는 어떻게 해야 하나요?","required":["law:36","decree:43"],"related":[]}
+{"id":"q14","question":"AI 같은 자동화된 시스템이 내린 결정을 정보주체가 거부할 수 있나요?","required":["law:37-2","decree:44-2"],"related":["decree:44-3"]}
+{"id":"q15","question":"개인정보 분쟁조정을 신청하면 결과가 나오기까지 얼마나 걸리나요?","required":["law:44"],"related":["law:43"]}
