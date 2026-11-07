@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 DATA_DIR = Path("data/processed")
 COMPARISON_DIR = Path("data/judge-comparison")
 EVALUATION_DIR = Path("data/evaluation")
+GRAPH_DIR = Path("data/graph")
 
 
 def main() -> None:
@@ -56,6 +57,14 @@ def main() -> None:
     graph_cmd.add_argument(
         "--judge", choices=["decisions", "jev"], default="decisions", help="--min-support에 쓸 판정 결과"
     )
+
+    export_cmd = sub.add_parser("export-graph", help="Neo4j 그래프를 JSON 파일로 내보낸다")
+    export_cmd.add_argument("--out", type=Path, default=GRAPH_DIR / "graph.json")
+    export_cmd.add_argument("--articles", nargs="+", help="이 조문과 관련 개체·관계만 내보낸다. 없으면 전체")
+
+    import_cmd = sub.add_parser("import-graph", help="JSON 파일의 그래프를 Neo4j에 적재한다")
+    import_cmd.add_argument("--file", type=Path, default=GRAPH_DIR / "graph.json")
+    import_cmd.add_argument("--reset", action="store_true", help="적재 전에 Neo4j의 모든 노드를 지운다")
 
     ask_cmd = sub.add_parser("ask", help="질문에 가져온 조문만 근거로 답한다")
     ask_cmd.add_argument("question")
@@ -332,3 +341,33 @@ def main() -> None:
             print(f"## 유형별 {metric}")
             for condition, by_type in summarize_by_type(results, questions, metric).items():
                 print(f"{condition} | " + " | ".join(f"{t} {v:.3f}" for t, v in sorted(by_type.items())))
+    elif args.command == "export-graph":
+        from .graph.export import read_graph, save_graph, subset
+        from .graph.loader import connect
+
+        driver = connect()
+        try:
+            data = read_graph(driver)
+        finally:
+            driver.close()
+        if args.articles:
+            data = subset(data, set(args.articles))
+        save_graph(data, args.out)
+        print(
+            f"{args.out}: 조문 {len(data.articles)}, 개체 {sum(map(len, data.entities.values()))}, "
+            f"조문 관계 {sum(map(len, data.article_edges.values()))}, "
+            f"개념 관계 {sum(map(len, data.concept_edges.values()))}"
+        )
+    elif args.command == "import-graph":
+        from .graph.export import load_graph_file
+        from .graph.loader import connect, count_graph, load_graph
+
+        data = load_graph_file(args.file)
+        driver = connect()
+        try:
+            load_graph(driver, data, reset=args.reset)
+            nodes, edges = count_graph(driver)
+        finally:
+            driver.close()
+        print(f"노드 {nodes}")
+        print(f"관계 {edges}")
