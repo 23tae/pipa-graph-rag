@@ -33,7 +33,7 @@ Neo4j Browser: http://localhost:7474
 
 ### 1. 조문 수집
 
-개인정보 보호법과 시행령의 현행 본문을 조문 단위로 저장한다.
+개인정보 보호법과 시행령의 현행 본문을 [법제처 국가법령정보 공동활용](https://open.law.go.kr) OPEN API에서 받아 조문 단위로 저장한다.
 
 ```bash
 uv run pipa-statute-graph-rag collect
@@ -119,10 +119,6 @@ MATCH (:Article {id: 'law:24'})-[:DELEGATES_TO]->(d) RETURN d.id, d.title
 ```bash
 uv run pytest
 ```
-
-## 출처
-
-법령 본문은 [법제처 국가법령정보 공동활용](https://open.law.go.kr) OPEN API에서 받는다. 코드는 MIT 라이선스이고 법령 데이터는 해당하지 않는다.
 
 ## 참고 문헌
 
