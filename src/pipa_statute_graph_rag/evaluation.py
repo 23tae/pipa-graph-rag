@@ -21,6 +21,7 @@ SKIP_VALUES = (None, 5, 10, 20, 50)  # 개념 확장에서 건너뛸 개체의 �
 
 class Question(BaseModel):
     id: str
+    type: str  # 단일, 위임, 예외, 준용
     question: str
     required: list[str]  # 답하려면 꼭 읽어야 하는 조문
     related: list[str]  # 있으면 좋은 조문
@@ -134,6 +135,19 @@ def summarize(results: list[QuestionResult]) -> dict[str, dict[str, float]]:
             values[metric] = mean(scores) if scores else float("nan")
         summary[name] = values
     return summary
+
+
+def summarize_by_type(
+    results: list[QuestionResult], questions: list[Question], metric: str
+) -> dict[str, dict[str, float]]:
+    """조건별, 질문 유형별 지표 평균. {조건: {유형: 평균}}."""
+    types = {q.id: q.type for q in questions}
+    table: dict[str, dict[str, list[float]]] = {}
+    for r in results:
+        value = getattr(r, metric)
+        if value is not None:
+            table.setdefault(r.condition, {}).setdefault(types[r.question_id], []).append(value)
+    return {c: {t: mean(v) for t, v in by_type.items()} for c, by_type in table.items()}
 
 
 def format_summary(summary: dict[str, dict[str, float]]) -> str:

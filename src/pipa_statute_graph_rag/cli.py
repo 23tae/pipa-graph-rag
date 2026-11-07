@@ -291,6 +291,7 @@ def main() -> None:
             format_summary,
             load_questions,
             summarize,
+            summarize_by_type,
         )
         from .graph.loader import connect
         from .query import QueryEngine
@@ -312,9 +313,22 @@ def main() -> None:
         by_condition = {}
         for r in results:
             by_condition.setdefault(r.condition, {})[r.question_id] = r
-        for base, other in (("keyword", "references/d1"), ("references/d1", "references+concepts/d1")):
-            for metric in ("recall_required", "precision"):
+        pairs = (
+            ("keyword", "references/d1"),
+            ("references/d1", "references+concepts/d1"),
+            ("references/d1", "references+concepts/d1/skip50"),
+            ("references+concepts/d1/skip50", "references+concepts/d1"),
+        )
+        for base, other in pairs:
+            if base not in by_condition or other not in by_condition:
+                continue
+            metrics = ("recall_required", "precision") + (("citation_recall",) if args.answer else ())
+            for metric in metrics:
                 a = [getattr(by_condition[base][q.id], metric) for q in questions]
                 b = [getattr(by_condition[other][q.id], metric) for q in questions]
                 value, low, high = bootstrap_difference(a, b)
                 print(f"{other} − {base} {metric}: {value:+.3f} [{low:+.3f}, {high:+.3f}]")
+        for metric in ("recall_required",) + (("citation_recall",) if args.answer else ()):
+            print(f"## 유형별 {metric}")
+            for condition, by_type in summarize_by_type(results, questions, metric).items():
+                print(f"{condition} | " + " | ".join(f"{t} {v:.3f}" for t, v in sorted(by_type.items())))

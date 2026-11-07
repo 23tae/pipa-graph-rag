@@ -40,6 +40,12 @@ class Answerer(Protocol):
     def answer(self, question: str, articles: list[Article]) -> tuple[AnswerOutput, int, int]: ...
 
 
+def normalize_citation(citation: str) -> str:
+    """모델이 조문 ID를 `[law:31]`처럼 대괄호로 감싸 내는 경우가 있어서 벗긴다. 프롬프트는 입력 조문 머리글을
+    `[조문 ID]`로 보여 준다."""
+    return citation.strip().strip("[]").strip()
+
+
 def check_citations(citations: list[str], retrieved_ids: list[str]) -> list[str]:
     """가져오지 않은 조문을 인용한 것을 돌려준다. 중복은 한 번만 센다."""
     known = set(retrieved_ids)
@@ -48,11 +54,12 @@ def check_citations(citations: list[str], retrieved_ids: list[str]) -> list[str]
 
 def ask(answerer: Answerer, question: str, articles: list[Article]) -> Answer:
     output, input_tokens, output_tokens = answerer.answer(question, articles)
+    citations = [normalize_citation(c) for c in output.citations]
     return Answer(
         question=question,
         answer=output.answer,
-        citations=output.citations,
-        invalid_citations=check_citations(output.citations, [a.id for a in articles]),
+        citations=citations,
+        invalid_citations=check_citations(citations, [a.id for a in articles]),
         model=answerer.model,
         prompt_id=answerer.prompt_id,
         prompt_sha256=answerer.prompt_sha256,
