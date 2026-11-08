@@ -202,7 +202,7 @@ def test_openrouter_embedder_posts_the_texts_and_orders_by_index(monkeypatch):
     assert seen == {
         "url": OPENROUTER_URL,
         "auth": "Bearer test-key",
-        "body": {"model": "vendor/model", "input": ["가", "나"]},
+        "body": {"model": "vendor/model", "input": ["가", "나"], "encoding_format": "float"},
     }
 
 

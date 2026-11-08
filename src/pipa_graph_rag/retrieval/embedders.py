@@ -45,7 +45,7 @@ class OpenRouterEmbedder:
         response = self._client.post(
             OPENROUTER_URL,
             headers={"Authorization": f"Bearer {os.environ['OPENROUTER_API_KEY']}"},
-            json={"model": self._model, "input": texts},
+            json={"model": self._model, "input": texts, "encoding_format": "float"},
         )
         if response.status_code != 200:
             raise EmbeddingFailed(f"HTTP {response.status_code} {response.text[:200]}")
