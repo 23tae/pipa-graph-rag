@@ -105,7 +105,7 @@ uv run pipa-graph-rag load-graph --reset
 
 질문과 비슷한 조문을 시작 조문(시드)으로 찾고, 그래프로 이웃 조문까지 넓혀서 가져온 조문만 근거로 답한다. 답에 인용한 조문이 가져온 조문에 없으면 알려 준다. 시드는 기본으로 임베딩 검색(Neo4j 벡터 인덱스)으로 고르고, `--seed bm25`로 키워드(문자 n-gram BM25) 검색으로 바꿀 수 있다.
 
-임베딩 검색을 쓰려면 조문 벡터를 먼저 만들어(`embed`, 임베딩 API 호출) Neo4j에 넣는다(`load-embeddings`, API 호출 없음). 질의마다 질문을 임베딩하려고 임베딩 API를 부르므로 `--embedder`의 API 키(`qwen3-8b`는 `OPENROUTER_API_KEY`)가 필요하다. `load-graph --reset`이나 `import-graph --reset`은 노드를 모두 지우므로 조문 벡터도 사라지고, 그때는 `load-embeddings`를 다시 실행한다.
+임베딩 검색을 쓰려면 조문 벡터를 먼저 만들어(`embed`, 임베딩 API 호출) Neo4j에 넣는다(`load-embeddings`, API 호출 없음). 질의마다 질문을 임베딩하려고 임베딩 API를 부르므로 `--embedder`의 API 키(`qwen3-8b`는 `OPENROUTER_API_KEY`)가 필요하다. `qwen3-8b`의 질의용 요청은 응답이 빠른 제공자를 우선하도록(`provider.sort: "latency"`) 보내고, 조문 벡터를 만드는 `embed`는 가장 싼 제공자(`:floor`)로 보낸다. `load-graph --reset`이나 `import-graph --reset`은 노드를 모두 지우므로 조문 벡터도 사라지고, 그때는 `load-embeddings`를 다시 실행한다.
 
 ```bash
 uv run pipa-graph-rag embed

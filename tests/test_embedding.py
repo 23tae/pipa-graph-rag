@@ -289,6 +289,22 @@ def test_openrouter_embedder_appends_the_routing_variant_to_the_request_model_on
     assert plain.embed(["가"]).tokens is None  # 응답에 usage가 없으면 토큰 수를 모른다
 
 
+def test_openrouter_embedder_sends_the_provider_routing_only_when_given(monkeypatch):
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+    bodies = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        bodies.append(json.loads(request.content))
+        return httpx.Response(200, json={"data": [{"index": 0, "embedding": [1.0]}]})
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    OpenRouterEmbedder("vendor/model", client=client).embed(["가"])
+    OpenRouterEmbedder("vendor/model", provider={"sort": "latency"}, client=client).embed(["가"])
+    assert "provider" not in bodies[0]
+    assert bodies[1]["provider"] == {"sort": "latency"}
+    assert bodies[1]["model"] == "vendor/model"
+
+
 def test_openrouter_embedder_raises_on_an_http_error(monkeypatch):
     monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
     embedder = openrouter_embedder(lambda request: httpx.Response(401, text="no"))

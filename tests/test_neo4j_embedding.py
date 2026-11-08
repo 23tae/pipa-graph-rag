@@ -143,6 +143,24 @@ def test_live_query_embedder_formats_the_question_and_calls_the_embedder_once(mo
     assert vector == [float(len("Instruct: 지시\nQuery:질문")), 1.0]
 
 
+def test_live_query_embedder_uses_the_query_embedder_when_the_spec_has_one(monkeypatch):
+    monkeypatch.setenv("FAKE_KEY", "x")
+    batch, query = FakeEmbedder(), FakeEmbedder()
+    spec = EmbedderSpec("fake/model", lambda: batch, "FAKE_KEY", build_query=lambda: query)
+    live_query_embedder(spec)("질문")
+    assert batch.texts == [] and query.texts == [["질문"]]
+
+
+def test_qwen_embeds_documents_by_price_and_queries_by_latency():
+    spec = EMBEDDERS["qwen3-8b"]
+    assert spec.build().request_model == "qwen/qwen3-embedding-8b:floor"
+    assert spec.build_query is not None
+    query_embedder = spec.build_query()
+    assert query_embedder.request_model == "qwen/qwen3-embedding-8b"
+    assert query_embedder._provider == {"sort": "latency"}
+    assert query_embedder.name == spec.build().name == spec.name
+
+
 def test_live_query_embedder_names_the_missing_api_key_variable(monkeypatch):
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
     with pytest.raises(MissingApiKey, match="OPENROUTER_API_KEY"):
