@@ -13,6 +13,7 @@ from .config import (
     EXTRACTION_MODEL,
     EXTRACTION_PROMPT_VERSION,
     GRAPH_DIR,
+    JEV_MODEL,
     MIN_SUPPORT,
     QUERY_DEPTH,
     QUERY_MAX_ENTITY_DEGREE,
@@ -174,9 +175,9 @@ def main() -> None:
         extraction_path, model = _resolve_extraction(args.extraction_model, version)
         extractions = {r.article_id: r.extraction for r in load_records(extraction_path)}
         if args.judge == "jev":
-            from .classify.jev import JevJudge
+            from .classify.openrouter import OpenRouterJudge
 
-            judge = JevJudge()
+            judge = OpenRouterJudge("jev", JEV_MODEL)
         else:
             from .classify.decisions import DecisionsJudge
 
@@ -306,9 +307,9 @@ def main() -> None:
             path = COMPARISON_DIR / f"judgments-{name}.jsonl"
             if not path.exists():
                 if name == "jev":
-                    from .classify.jev import JevJudge
+                    from .classify.openrouter import OpenRouterJudge
 
-                    judge = JevJudge()
+                    judge = OpenRouterJudge("jev", JEV_MODEL)
                 else:
                     from .classify.decisions import DecisionsJudge
 
