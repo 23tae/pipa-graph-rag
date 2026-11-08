@@ -28,9 +28,7 @@ docker compose up -d
 
 Neo4j Browser: http://localhost:7474
 
-사용하는 모델, 프롬프트 버전, 기본 판정기, 질의 기본값, 병렬 작업 수, 데이터 폴더는 `src/pipa_graph_rag/config.py`에서 바꾼다. 명령줄 옵션을 주면 그 값이 우선한다.
-
-개념 관계 추출과 질의 답변은 OpenAI Responses API로 부르므로 OpenAI 모델만 쓸 수 있다. 지지 여부 판정은 OpenAI Decisions API(`gpt-6-luna`만 지원)나 OpenRouter의 판정 모델(Jev, pplx-decider)로 한다. 각 설정의 선택지는 `config.py`의 주석에 있다.
+사용하는 모델, 프롬프트 버전, 기본 판정기, 질의 기본값, 병렬 작업 수, 데이터 폴더는 `src/pipa_graph_rag/config.py`에서 바꾼다. 각 설정의 선택지와 제약은 그 파일의 주석에 있고, 명령줄 옵션을 주면 그 값이 우선한다.
 
 ## 샘플로 바로 써 보기
 
@@ -101,7 +99,7 @@ uv run pipa-graph-rag load-graph --reset
 
 - `--reset`: 적재 전에 Neo4j의 모든 노드를 지운다. 없으면 같은 데이터를 다시 넣어도 중복되지 않는다.
 - `--judge`: 어느 판정기의 결과로 거를지 고른다. 기본은 `decisions`이다.
-- `--min-support`: 판정 확률이 이 값 이상인 개념 관계만 넣는다. 0이면 판정으로 거르지 않고 모두 넣는다. 판정기마다 확률의 눈금이 달라서 기본값도 다르다(decisions 0.1, jev 0.54, pplx 0.92).
+- `--min-support`: 판정 확률이 이 값 이상인 개념 관계만 넣는다. 0이면 판정으로 거르지 않고 모두 넣는다. 판정기마다 확률의 눈금이 달라서 기본값도 다르다. 기본값은 `load-graph --help`에 나온다.
 
 ### 6. 질의
 
