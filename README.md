@@ -149,9 +149,9 @@ uv run pipa-graph-rag evaluate-search --questions questions-2.jsonl --seeds bm25
 
 | 조건 | 가져온 조문 수 | 필수 정답 조문 재현율 |
 | --- | --- | --- |
-| `keyword` | 3.0 | 0.659 |
-| `references`, 깊이 1 | 20.8 | 0.913 |
-| `references+concepts`, 깊이 1, `--max-entity-degree 50` (기본) | 52.5 | 1.000 |
+| `keyword` | 3.0 | 0.703 |
+| `references`, 깊이 1 | 22.0 | 0.935 |
+| `references+concepts`, 깊이 1, `--max-entity-degree 50` (기본) | 55.3 | 1.000 |
 
 판정기 두 개(Decisions API, Jev)의 정확도 비교는 `judge-sample`과 `judge-compare`로 한다. `judge-compare`는 이 두 판정기만 비교한다. 라벨 90개로 쟀을 때 정확도는 둘 다 약 78%였고 차이를 구분할 수 없었다.
 
