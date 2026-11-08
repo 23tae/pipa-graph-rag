@@ -32,13 +32,14 @@ class OpenAIEmbedder:
 
 
 class OpenRouterEmbedder:
-    def __init__(self, model: str, client: httpx.Client | None = None):
+    def __init__(self, model: str, variant: str | None = None, client: httpx.Client | None = None):
+        """variant: 모델 ID 뒤에 `:변형`으로 붙는 라우팅 변형(예: floor). 없으면 기본 라우팅을 쓴다."""
         if client is None:
             import httpx
 
             client = httpx.Client(timeout=120)
         self.name = f"openrouter/{model}"
-        self._model = model
+        self._model = f"{model}:{variant}" if variant else model
         self._client = client
 
     def embed(self, texts: list[str]) -> list[list[float]]:
@@ -63,6 +64,7 @@ EMBEDDERS: dict[str, EmbedderSpec] = {
         "openai/text-embedding-3-small", lambda: OpenAIEmbedder("text-embedding-3-small")
     ),
     "qwen3-8b": EmbedderSpec(
-        "openrouter/qwen/qwen3-embedding-8b", lambda: OpenRouterEmbedder("qwen/qwen3-embedding-8b")
+        "openrouter/qwen/qwen3-embedding-8b",
+        lambda: OpenRouterEmbedder("qwen/qwen3-embedding-8b", variant="floor"),
     ),
 }

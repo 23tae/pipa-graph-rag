@@ -206,6 +206,23 @@ def test_openrouter_embedder_posts_the_texts_and_orders_by_index(monkeypatch):
     }
 
 
+def test_openrouter_embedder_appends_the_routing_variant_to_the_request_model_only(monkeypatch):
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+    models = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        models.append(json.loads(request.content)["model"])
+        return httpx.Response(200, json={"data": [{"index": 0, "embedding": [1.0]}]})
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    plain = OpenRouterEmbedder("vendor/model", client=client)
+    floor = OpenRouterEmbedder("vendor/model", variant="floor", client=client)
+    plain.embed(["가"])
+    floor.embed(["가"])
+    assert models == ["vendor/model", "vendor/model:floor"]
+    assert plain.name == floor.name == "openrouter/vendor/model"
+
+
 def test_openrouter_embedder_raises_on_an_http_error(monkeypatch):
     monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
     embedder = openrouter_embedder(lambda request: httpx.Response(401, text="no"))
