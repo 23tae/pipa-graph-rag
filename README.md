@@ -128,6 +128,25 @@ uv run pipa-graph-rag evaluate-search --answer --conditions keyword references/d
 
 `--answer`를 주면 답변도 만들어 인용한 조문을 정답과 대조한다. `--conditions`는 돌릴 조건을 고른다.
 
+시작 조문(시드)은 기본으로 BM25로 고른다. `embed`로 조문과 평가 질문의 임베딩을 만들어 두면 임베딩 검색(`embedding`)이나 BM25와 임베딩의 순위를 합산하는 하이브리드(`hybrid`)로도 고를 수 있다. `ask`는 아직 BM25만 쓴다.
+
+```bash
+uv run pipa-graph-rag embed --dry-run
+uv run pipa-graph-rag embed
+uv run pipa-graph-rag evaluate-search --questions questions-2.jsonl --seeds bm25 hybrid --top-k 3 5 --conditions keyword --out results-seeds.jsonl
+```
+
+| 옵션 | 뜻 |
+| --- | --- |
+| `embed --embedder` | `openai-small`(OpenAI `text-embedding-3-small`, `OPENAI_API_KEY`) 또는 `qwen3-8b`(OpenRouter `qwen/qwen3-embedding-8b`, `OPENROUTER_API_KEY`). 기본값은 `config.py`의 `EMBEDDING_MODEL` |
+| `embed --dry-run` | API를 부르지 않고 보낼 요청 수와 글자 수만 출력 |
+| `evaluate-search --seeds` | 시드를 고르는 방식: `bm25`, `embedding`, `hybrid` |
+| `evaluate-search --top-k` | 시드 조문 수. 여러 값을 주면 각각 돌림 |
+| `evaluate-search --questions` | `data/evaluation`의 질문 파일. 새 질문 40개는 `questions-2.jsonl` |
+| `evaluate-search --out` | 결과 파일 이름. 질문 파일이나 시드 설정을 바꾸면 기존 결과를 덮어쓰지 않도록 꼭 줘야 함 |
+
+벡터는 `data/embeddings/`에 모델마다 파일 하나로 저장한다. 조건 이름은 BM25가 아닌 시드이면 `:hybrid`, 시드 수가 기본값(3)이 아니면 `:k5`처럼 뒤에 붙는다. `keyword` 조건은 확장 없이 시드만 가져오는 조건이다.
+
 | 조건 | 가져온 조문 수 | 필수 정답 조문 재현율 |
 | --- | --- | --- |
 | `keyword` | 3.0 | 0.659 |
