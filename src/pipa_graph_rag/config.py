@@ -21,7 +21,7 @@ QUERY_DEPTH = 1  # 시작 조문에서 그래프로 넓히는 단계 수
 QUERY_TOP_K = 3  # 키워드 검색으로 고르는 시작 조문 수
 QUERY_MAX_ENTITY_DEGREE = 50  # 이 수 이상의 조문이 언급하는 개체는 개념 확장에서 건너뛴다. 0이면 건너뛰지 않는다
 
-EMBEDDING_MODEL = "openai-small"  # openai-small | qwen3-8b. retrieval/embedders.py에 모델 ID가 있다
+EMBEDDING_MODEL = "qwen3-8b"  # openai-small | qwen3-8b | qwen3-8b-plain(질문 지시문 없음). retrieval/embedders.py에 모델 ID가 있다
 
 DEFAULT_WORKERS = 4  # 동시에 보내는 API 요청 수
 # 추론 토큰과 출력 토큰을 합친 한도. 추론 모델 가이드가 최소 25,000토큰을 확보하라고 권한다.
