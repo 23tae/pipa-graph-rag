@@ -22,7 +22,7 @@ docker compose up -d
 | --- | --- |
 | `LAW_OC` | 법제처 OPEN API 인증키 |
 | `OPENAI_API_KEY` | OpenAI API 키 |
-| `OPENROUTER_API_KEY` | OpenRouter API 키(Jev 판정에만 필요) |
+| `OPENROUTER_API_KEY` | OpenRouter API 키(`--judge jev`, `--judge pplx`에만 필요) |
 | `NEO4J_PASSWORD` | Neo4j 비밀번호 |
 
 Neo4j Browser: http://localhost:7474
@@ -85,7 +85,7 @@ uv run pipa-graph-rag judge
 ```
 
 - 결과: `support/<모델>-<프롬프트 버전>-<판정기>.jsonl`
-- `--judge decisions`(OpenAI Decisions API, 기본), `--judge jev`(Jev)
+- `--judge`: `decisions`(OpenAI Decisions API, 기본), `jev`(Jev), `pplx`(Perplexity의 pplx-decider). `jev`와 `pplx`는 OpenRouter로 호출한다.
 - `--extraction-model`: 판정할 추출 결과의 모델. 없으면 최신 프롬프트 버전의 추출 결과가 하나뿐일 때 그 파일을, 여럿이면 `EXTRACTION_MODEL`의 파일을 쓴다. 파일이 없으면 오류를 낸다. `load-graph`도 같다.
 
 ### 5. 그래프 적재
@@ -97,7 +97,8 @@ uv run pipa-graph-rag load-graph --reset
 ```
 
 - `--reset`: 적재 전에 Neo4j의 모든 노드를 지운다. 없으면 같은 데이터를 다시 넣어도 중복되지 않는다.
-- `--min-support`: 판정 확률이 이 값 이상인 개념 관계만 넣는다. 기본값은 0.1이고, 0이면 판정으로 거르지 않고 모두 넣는다.
+- `--judge`: 어느 판정기의 결과로 거를지 고른다. 기본은 `decisions`이다.
+- `--min-support`: 판정 확률이 이 값 이상인 개념 관계만 넣는다. 0이면 판정으로 거르지 않고 모두 넣는다. 판정기마다 확률의 눈금이 달라서 기본값도 다르다(decisions 0.1, jev 0.54, pplx 0.92).
 
 ### 6. 질의
 
