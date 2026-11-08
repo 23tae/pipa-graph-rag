@@ -22,7 +22,7 @@ docker compose up -d
 | --- | --- |
 | `LAW_OC` | 법제처 OPEN API 인증키([국가법령정보 공동활용](https://open.law.go.kr)에서 신청) |
 | `OPENAI_API_KEY` | OpenAI API 키 |
-| `OPENROUTER_API_KEY` | OpenRouter API 키(`--judge jev`, `--judge pplx`에만 필요) |
+| `OPENROUTER_API_KEY` | OpenRouter API 키(기본 임베딩 모델 `qwen3-8b`를 쓰는 `embed`와 `ask`, `--judge jev`, `--judge pplx`에 필요) |
 | `NEO4J_PASSWORD` | Neo4j 비밀번호 |
 | `NEO4J_URI`, `NEO4J_USER` | 선택. 기본은 `bolt://localhost:7687`, `neo4j` |
 
@@ -125,7 +125,7 @@ uv run pipa-graph-rag ask "개인정보 유출 사실을 알게 되면 정보주
 
 ## 평가
 
-질문 23개(단일 조문, 위임, 예외, 준용)와 질문마다 정답 조문을 `data/evaluation/questions.jsonl`에 두었다. 검색 설정별로 정답 조문을 얼마나 가져오는지 비교한다.
+질문과 각 질문의 정답 조문을 `data/evaluation`에 두었다(단일 조문, 위임, 예외, 준용). `questions.jsonl`은 23개, `questions-2.jsonl`은 40개다. 검색 설정별로 정답 조문을 얼마나 가져오는지 비교한다. 아래 첫 표는 23개로 잰 확장 설정별 결과이고, 시드 방식별 결과는 40개로 쟀다.
 
 ```bash
 uv run pipa-graph-rag evaluate-search
@@ -160,6 +160,16 @@ uv run pipa-graph-rag evaluate-search --questions questions-2.jsonl --seeds bm25
 | `references`, 깊이 1 | 22.0 | 0.935 |
 | `references+concepts`, 깊이 1, `--max-entity-degree 50` (기본) | 55.3 | 1.000 |
 
+질문 40개(`questions-2.jsonl`)에서 시드 방식별로 잰 결과. 시드는 3개이고 각 칸은 필수 정답 조문 재현율 / 가져온 조문 수다. `임베딩`은 `qwen3-8b`이며 메모리에서 정확히 계산한 값이다. 하이브리드는 평가에서만 쓴다.
+
+| 조건 | BM25 | 하이브리드 | 임베딩 |
+| --- | --- | --- | --- |
+| `keyword` (시드만) | 0.688 / 3.0 | 0.812 / 3.0 | 0.887 / 3.0 |
+| `references`, 깊이 1 | 0.875 / 19.4 | 0.975 / 19.3 | 1.000 / 16.6 |
+| `references+concepts`, 깊이 1, `--max-entity-degree 50` (기본) | 0.938 / 50.8 | 0.988 / 49.2 | 1.000 / 44.0 |
+
+`ask`가 쓰는 Neo4j 벡터 인덱스로 잰 임베딩 시드는 위 세 조건에서 0.900 / 3.0, 1.000 / 16.3, 1.000 / 42.7이다(`evaluate-search --vectors neo4j`). 임베딩 단독과 하이브리드는 이 질문 수로 구분하지 못했고, 더 단순한 임베딩 단독을 기본으로 했다.
+
 판정기 두 개(Decisions API, Jev)의 정확도 비교는 `judge-sample`과 `judge-compare`로 한다. `judge-compare`는 이 두 판정기만 비교한다. 라벨 90개로 쟀을 때 정확도는 둘 다 약 78%였고 차이를 구분할 수 없었다.
 
 ## 그래프 구조
@@ -190,7 +200,9 @@ uv run pytest
 - 시행령이 가리키는 별표의 본문은 수집하지 않는다.
 - 개념 관계는 LLM이 추출한다. 지지 여부 판정으로 일부를 걸러도 틀린 관계가 남는다.
 - 법 위반 여부는 판정하지 않는다.
-- 평가는 질문 23개 규모라 작은 차이는 구분하지 못한다.
+- 기본 시드 검색은 질의마다 임베딩 API를 부른다. API 키와 네트워크가 필요하고 BM25(약 0.01초)보다 느리다. 질문 임베딩 호출 20회에서 중앙값 약 1.6초, 최대 약 11.2초로 편차가 컸다.
+- Neo4j 벡터 인덱스는 근사 검색이라 메모리의 정확한 계산과 시드 3개가 다른 질문이 있다(63개 중 7개. 모두 3위와 4위가 바뀌었다).
+- 평가 질문은 63개(23개와 40개) 규모라 작은 차이는 구분하지 못한다.
 
 ## 출처와 유의 사항
 
