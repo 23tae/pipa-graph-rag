@@ -2,11 +2,11 @@
 
 from pathlib import Path
 
-EXTRACTION_MODEL = "gpt-6-luna"
-ANSWER_MODEL = "gpt-6-luna"
-DECISIONS_MODEL = "gpt-6-luna"  # Decisions API가 지원하는 유일한 모델
-JEV_MODEL = "~typesafe/jev-latest"
-PPLX_MODEL = "perplexity/pplx-decider-v1.2"
+EXTRACTION_MODEL = "gpt-6-luna"  # OpenAI Responses API로 부르므로 OpenAI 모델만 쓸 수 있다. 써 본 모델: gpt-6-luna, gpt-6.1-terra
+ANSWER_MODEL = "gpt-6-luna"  # 위와 같다
+DECISIONS_MODEL = "gpt-6-luna"  # OpenAI Decisions API가 지원하는 유일한 모델
+JEV_MODEL = "~typesafe/jev-latest"  # OpenRouter 모델 ID. decisions 엔드포인트가 noul 응답을 내는 모델이어야 한다
+PPLX_MODEL = "perplexity/pplx-decider-v1.2"  # 위와 같다
 
 EXTRACTION_PROMPT_VERSION = "v3"  # extraction/prompts에 있는 버전: v2 | v3
 SUPPORT_PROMPT_VERSION = "v1"  # classify/prompts/support에 있는 버전: v1
