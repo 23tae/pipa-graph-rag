@@ -127,7 +127,12 @@ def main() -> None:
 
     eval_cmd = sub.add_parser("evaluate-search", help="질문과 정답 조문으로 검색 설정을 비교한다")
     eval_cmd.add_argument("--answer", action="store_true", help="답변도 만들어 인용을 정답과 대조한다")
-    eval_cmd.add_argument("--conditions", nargs="+", help="돌릴 조건 이름. 없으면 모든 조건")
+    eval_cmd.add_argument(
+        "--conditions",
+        nargs="+",
+        help="돌릴 조건 이름. 모드/깊이/건너뛰기 기준 순서이고 예는 keyword, references/d1, "
+        "references+concepts/d1/skip50이다. 없으면 모든 조건",
+    )
     eval_cmd.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
 
     args = parser.parse_args()
