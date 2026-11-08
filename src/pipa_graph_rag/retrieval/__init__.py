@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from enum import StrEnum
 
 from pydantic import BaseModel
@@ -44,9 +45,18 @@ def build_index(articles: list[Article]) -> Bm25Index:
     return Bm25Index({a.id: a.text for a in indexed_articles(articles)})
 
 
-def build_embedding_index(articles: list[Article], cache: EmbeddingCache) -> EmbeddingIndex:
-    """캐시에 저장된 벡터로 색인한다. 질문 벡터도 캐시에서만 읽어서 API를 부르지 않는다."""
-    return EmbeddingIndex({a.id: cache.get(a.text) for a in indexed_articles(articles)}, cache.get)
+def build_embedding_index(
+    articles: list[Article],
+    cache: EmbeddingCache,
+    format_query: Callable[[str], str] = lambda question: question,
+) -> EmbeddingIndex:
+    """캐시에 저장된 벡터로 색인한다. 질문 벡터도 캐시에서만 읽어서 API를 부르지 않는다.
+
+    format_query는 질문을 임베딩할 때 쓴 형태(지시문을 붙인 텍스트)로 바꾼다. 조문에는 적용하지 않는다."""
+    return EmbeddingIndex(
+        {a.id: cache.get(a.text) for a in indexed_articles(articles)},
+        lambda question: cache.get(format_query(question)),
+    )
 
 
 def retrieve(

@@ -6,12 +6,19 @@ import pytest
 
 from pipa_graph_rag.retrieval import build_embedding_index
 from pipa_graph_rag.retrieval import embedding as embedding_module
-from pipa_graph_rag.retrieval.embedders import OPENROUTER_URL, OpenAIEmbedder, OpenRouterEmbedder
+from pipa_graph_rag.retrieval.embedders import (
+    EMBEDDERS,
+    OPENROUTER_URL,
+    QWEN_QUERY_INSTRUCTION,
+    OpenAIEmbedder,
+    OpenRouterEmbedder,
+)
 from pipa_graph_rag.retrieval.embedding import (
     EmbeddingCache,
     EmbeddingFailed,
     EmbeddingIndex,
     EmbeddingNotCached,
+    EmbeddingResult,
     cache_path,
     embed_missing,
     plan_embedding,
@@ -27,16 +34,20 @@ def article(id: str, text: str) -> Article:
 
 class FakeEmbedder:
     name = "fake/model"
+    request_model = "fake/model:floor"
 
-    def __init__(self, fail_on_call: int | None = None):
+    def __init__(self, fail_on_call: int | None = None, tokens: int | None = None):
         self.calls: list[list[str]] = []
         self._fail_on_call = fail_on_call
+        self._tokens = tokens
 
     def embed(self, texts):
         self.calls.append(list(texts))
         if self._fail_on_call == len(self.calls):
             raise RuntimeError("실패")
-        return [[float(len(text)), 1.0] for text in texts]
+        return EmbeddingResult(
+            [[float(len(text)), 1.0] for text in texts], tokens=self._tokens, model="fake/model"
+        )
 
 
 def test_cache_path_replaces_slashes_in_the_model_name(tmp_path):
@@ -76,11 +87,30 @@ def test_embed_missing_sends_only_missing_texts_in_batches(tmp_path, monkeypatch
     monkeypatch.setattr(embedding_module, "BATCH_SIZE", 2)
     cache = EmbeddingCache(tmp_path / "e.json")
     cache.put("있음", [9.0, 9.0])
-    embedder = FakeEmbedder()
-    assert embed_missing(embedder, cache, ["있음", "가", "나", "다"]) == 2
+    embedder = FakeEmbedder(tokens=10)
+    first = embed_missing(embedder, cache, ["있음", "가", "나", "다"])
+    assert (first.requests, first.tokens) == (2, 20)
     assert embedder.calls == [["가", "나"], ["다"]]
-    assert embed_missing(embedder, cache, ["있음", "가", "나", "다"]) == 0
+    second = embed_missing(embedder, cache, ["있음", "가", "나", "다"])
+    assert (second.requests, second.tokens) == (0, 0)
     assert len(embedder.calls) == 2
+
+
+def test_embed_missing_records_each_request_and_keeps_the_record_in_the_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(embedding_module, "BATCH_SIZE", 2)
+    cache = EmbeddingCache(tmp_path / "e.json")
+    embed_missing(FakeEmbedder(tokens=7), cache, ["가", "나", "다"])
+    reloaded = EmbeddingCache(tmp_path / "e.json")
+    assert [(c["request_model"], c["response_model"], c["texts"], c["tokens"]) for c in reloaded.calls] == [
+        ("fake/model:floor", "fake/model", 2, 7),
+        ("fake/model:floor", "fake/model", 1, 7),
+    ]
+    assert all(c["at"] for c in reloaded.calls)
+
+
+def test_total_tokens_is_unknown_when_a_response_has_no_usage(tmp_path):
+    summary = embed_missing(FakeEmbedder(tokens=None), EmbeddingCache(tmp_path / "e.json"), ["가"])
+    assert summary.tokens is None
 
 
 def test_embed_missing_keeps_vectors_received_before_a_failure(tmp_path, monkeypatch):
@@ -96,9 +126,10 @@ def test_embed_missing_keeps_vectors_received_before_a_failure(tmp_path, monkeyp
 def test_embed_missing_rejects_a_response_with_the_wrong_vector_count(tmp_path):
     class Short:
         name = "short"
+        request_model = "short"
 
         def embed(self, texts):
-            return [[1.0]]
+            return EmbeddingResult([[1.0]], tokens=None, model=None)
 
     with pytest.raises(EmbeddingFailed):
         embed_missing(Short(), EmbeddingCache(tmp_path / "e.json"), ["가", "나"])
@@ -130,6 +161,26 @@ def test_embedding_index_built_from_cache_never_calls_an_embedder(tmp_path):
     assert index.search("열람 질문", 1)[0][0] == "law:1"
     with pytest.raises(EmbeddingNotCached):
         index.search("캐시에 없는 질문", 1)
+
+
+def test_format_query_adds_the_instruction_to_questions_only_for_models_that_use_one():
+    qwen = EMBEDDERS["qwen3-8b"]
+    assert qwen.format_query("질문") == f"Instruct: {QWEN_QUERY_INSTRUCTION}\nQuery:질문"
+    assert EMBEDDERS["qwen3-8b-plain"].format_query("질문") == "질문"
+    assert EMBEDDERS["openai-small"].format_query("질문") == "질문"
+    assert qwen.name == EMBEDDERS["qwen3-8b-plain"].name
+
+
+def test_embedding_index_reads_the_formatted_question_from_the_cache(tmp_path):
+    cache = EmbeddingCache(tmp_path / "e.json")
+    articles = [article("law:1", "열람"), article("law:2", "파기")]
+    cache.put("열람", [1.0, 0.0])
+    cache.put("파기", [0.0, 1.0])
+    cache.put("지시문 열람", [1.0, 0.0])
+    index = build_embedding_index(articles, cache, lambda question: f"지시문 {question}")
+    assert index.search("열람", 1)[0][0] == "law:1"
+    with pytest.raises(EmbeddingNotCached):
+        build_embedding_index(articles, cache).search("열람 질문", 1)
 
 
 def test_hybrid_sums_reciprocal_ranks_from_both_searches():
@@ -169,12 +220,19 @@ def test_openai_embedder_returns_vectors_in_input_order():
     class Embeddings:
         def create(self, model, input):
             assert model == "text-embedding-3-small" and input == ["가", "나"]
-            return type("R", (), {"data": [Item(1, [2.0]), Item(0, [1.0])]})()
+            usage = type("U", (), {"prompt_tokens": 5})()
+            return type(
+                "R",
+                (),
+                {"data": [Item(1, [2.0]), Item(0, [1.0])], "usage": usage, "model": "text-embedding-3-small"},
+            )()
 
     client = type("C", (), {"embeddings": Embeddings()})()
     embedder = OpenAIEmbedder("text-embedding-3-small", client=client)
     assert embedder.name == "openai/text-embedding-3-small"
-    assert embedder.embed(["가", "나"]) == [[1.0], [2.0]]
+    result = embedder.embed(["가", "나"])
+    assert result.vectors == [[1.0], [2.0]]
+    assert (result.tokens, result.model) == (5, "text-embedding-3-small")
 
 
 def openrouter_embedder(handler) -> OpenRouterEmbedder:
@@ -193,12 +251,18 @@ def test_openrouter_embedder_posts_the_texts_and_orders_by_index(monkeypatch):
         seen["body"] = json.loads(request.content)
         return httpx.Response(
             200,
-            json={"data": [{"index": 1, "embedding": [2.0]}, {"index": 0, "embedding": [1.0]}]},
+            json={
+                "data": [{"index": 1, "embedding": [2.0]}, {"index": 0, "embedding": [1.0]}],
+                "model": "vendor/model",
+                "usage": {"prompt_tokens": 9, "total_tokens": 9},
+            },
         )
 
     embedder = openrouter_embedder(handler)
     assert embedder.name == "openrouter/vendor/model"
-    assert embedder.embed(["가", "나"]) == [[1.0], [2.0]]
+    result = embedder.embed(["가", "나"])
+    assert result.vectors == [[1.0], [2.0]]
+    assert (result.tokens, result.model) == (9, "vendor/model")
     assert seen == {
         "url": OPENROUTER_URL,
         "auth": "Bearer test-key",
@@ -221,6 +285,8 @@ def test_openrouter_embedder_appends_the_routing_variant_to_the_request_model_on
     floor.embed(["가"])
     assert models == ["vendor/model", "vendor/model:floor"]
     assert plain.name == floor.name == "openrouter/vendor/model"
+    assert (plain.request_model, floor.request_model) == ("vendor/model", "vendor/model:floor")
+    assert plain.embed(["가"]).tokens is None  # 응답에 usage가 없으면 토큰 수를 모른다
 
 
 def test_openrouter_embedder_raises_on_an_http_error(monkeypatch):

@@ -57,14 +57,20 @@ class QueryEngine:
         driver: Driver,
         answerer: Answerer | None = None,
         embedding_cache: EmbeddingCache | None = None,
+        format_query: Callable[[str], str] = lambda question: question,
     ) -> QueryEngine:
         articles = read_articles(driver)
+        embedding = (
+            build_embedding_index(articles, embedding_cache, format_query)
+            if embedding_cache is not None
+            else None
+        )
         return cls(
             articles,
             references=reference_neighbors(driver),
             concepts=lambda max_entity_degree: concept_neighbors(driver, max_entity_degree),
             answerer=answerer,
-            embedding=build_embedding_index(articles, embedding_cache) if embedding_cache is not None else None,
+            embedding=embedding,
         )
 
     def run(

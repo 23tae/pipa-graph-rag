@@ -353,7 +353,7 @@ def main() -> None:
         cache = EmbeddingCache(cache_path(EMBEDDING_DIR, spec.name))
         texts = [a.text for a in indexed_articles(load_articles(DATA_DIR / "articles.json"))]
         texts += [
-            q.question
+            spec.format_query(q.question)
             for path in sorted(EVALUATION_DIR.glob("questions*.jsonl"))
             for q in load_questions(path)
         ]
@@ -363,7 +363,9 @@ def main() -> None:
             f"요청 {plan.requests}번, {plan.characters:,}자"
         )
         if plan.missing and not args.dry_run:
-            embed_missing(spec.build(), cache, texts)
+            summary = embed_missing(spec.build(), cache, texts)
+            tokens = "응답에 없음" if summary.tokens is None else f"{summary.tokens:,}토큰"
+            print(f"요청 {summary.requests}번, 응답이 알려 준 입력 {tokens}")
             print(f"{cache.path}에 저장했다")
     elif args.command == "evaluate-search":
         from .evaluation import (
@@ -395,7 +397,9 @@ def main() -> None:
         driver = connect()
         try:
             results = evaluate_all(
-                QueryEngine.from_graph(driver, embedding_cache=cache),
+                QueryEngine.from_graph(
+                    driver, embedding_cache=cache, format_query=EMBEDDERS[args.embedder].format_query
+                ),
                 questions,
                 selected,
                 answer=args.answer,
