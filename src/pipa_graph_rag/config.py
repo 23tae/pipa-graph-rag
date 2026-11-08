@@ -8,13 +8,13 @@ DECISIONS_MODEL = "gpt-6-luna"  # Decisions API가 지원하는 유일한 모델
 JEV_MODEL = "~typesafe/jev-latest"
 PPLX_MODEL = "perplexity/pplx-decider-v1.2"
 
-EXTRACTION_PROMPT_VERSION = "v3"
-SUPPORT_PROMPT_VERSION = "v1"
-ANSWER_PROMPT_VERSION = "v1"
+EXTRACTION_PROMPT_VERSION = "v3"  # extraction/prompts에 있는 버전: v2 | v3
+SUPPORT_PROMPT_VERSION = "v1"  # classify/prompts/support에 있는 버전: v1
+ANSWER_PROMPT_VERSION = "v1"  # answer/prompts에 있는 버전: v1
 
-DEFAULT_JUDGE = "decisions"
+DEFAULT_JUDGE = "decisions"  # decisions | jev | pplx
 
-QUERY_MODE = "references+concepts"
+QUERY_MODE = "references+concepts"  # keyword | references | references+concepts
 QUERY_DEPTH = 1
 QUERY_TOP_K = 3
 QUERY_MAX_ENTITY_DEGREE = 50  # 이 수 이상의 조문이 언급하는 개체는 개념 확장에서 건너뛴다. 0이면 건너뛰지 않는다
