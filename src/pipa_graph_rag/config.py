@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-EXTRACTION_MODEL = "gpt-6-luna"  # OpenAI Responses API로 부르므로 OpenAI 모델만 쓸 수 있다. 써 본 모델: gpt-6-luna, gpt-6.1-terra
+EXTRACTION_MODEL = "gpt-6-luna"  # OpenAI Responses API로 호출하고 구조화 출력을 지원하는 모델이어야 한다
 ANSWER_MODEL = "gpt-6-luna"  # 위와 같다
 DECISIONS_MODEL = "gpt-6-luna"  # OpenAI Decisions API가 지원하는 유일한 모델
 JEV_MODEL = "~typesafe/jev-latest"  # OpenRouter 모델 ID. decisions 엔드포인트가 noul 응답을 내는 모델이어야 한다
