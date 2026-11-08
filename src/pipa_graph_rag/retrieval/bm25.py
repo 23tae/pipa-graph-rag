@@ -9,9 +9,10 @@ from collections import Counter
 _WORD = re.compile(r"[0-9A-Za-z가-힣]+")
 NGRAM_SIZES = (2, 3)
 
-# BM25의 일반적인 기본값. 이 데이터에서 조정하지 않았다.
+# K1은 BM25의 일반적인 기본값이다. B는 일반적인 기본값 0.75 대신 0.4다. 개발용 질문 23개에서 K1 {0.9, 1.2, 1.5, 2.0} ×
+# B {0.4, 0.75, 0.9}를 훑어 시드 3개 재현율이 가장 높은 조합(B 0.4) 중 기본값에 가까운 것이다. 이득은 질문 1개 차이다.
 K1 = 1.5
-B = 0.75
+B = 0.4
 
 
 def tokenize(text: str) -> list[str]:
