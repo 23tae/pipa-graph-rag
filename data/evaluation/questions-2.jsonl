@@ -1,0 +1,10 @@
+{"id":"q24","type":"단일","question":"회사가 직원의 건강 상태나 노조 가입 같은 정보를 모아도 되나요?","required":["law:23"],"related":["decree:18"]}
+{"id":"q25","type":"단일","question":"다른 곳에서 받은 연락처로 연락했는데 상대가 내 정보를 어디서 얻었냐고 물으면 알려줘야 하나요?","required":["law:20"],"related":["decree:15-2"]}
+{"id":"q26","type":"단일","question":"회사가 다른 회사에 합병되면 고객 개인정보는 어떻게 되나요?","required":["law:27"],"related":["decree:29"]}
+{"id":"q27","type":"단일","question":"앱에 가입할 때 필수가 아닌 정보 제공에 동의하지 않으면 가입을 막아도 되나요?","required":["law:16"],"related":[]}
+{"id":"q28","type":"위임","question":"고객 정보가 해킹으로 유출됐을 때 언제까지 고객에게 알려야 하나요?","required":["law:34","decree:39"],"related":[]}
+{"id":"q29","type":"위임","question":"회사는 고객에게 개인정보를 어디에 썼고 누구에게 제공했는지 주기적으로 알려줘야 하나요?","required":["law:20-2","decree:15-3"],"related":[]}
+{"id":"q30","type":"위임","question":"한국에 사무소가 없는 해외 기업도 한국에 대리인을 지정해야 하나요?","required":["law:31-2","decree:32-3"],"related":[]}
+{"id":"q31","type":"위임","question":"공공기관은 개인정보 파일을 운영할 때 어떤 내용을 등록해야 하나요?","required":["law:32","decree:33"],"related":[]}
+{"id":"q32","type":"예외","question":"집단분쟁조정 중에 일부 피해자가 소송을 내면 조정 절차는 중단되나요?","required":["law:49","law:48"],"related":[]}
+{"id":"q33","type":"준용","question":"배달 로봇이나 드론 같은 이동형 촬영기기를 운영할 때도 CCTV처럼 운영·관리 방침을 만들어야 하나요?","required":["law:25-2","law:25"],"related":[]}
