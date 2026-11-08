@@ -24,7 +24,9 @@ def tokenize(text: str) -> list[str]:
 
 
 class Bm25Index:
-    def __init__(self, documents: dict[str, str]):
+    def __init__(self, documents: dict[str, str], k1: float = K1, b: float = B):
+        self._k1 = k1
+        self._b = b
         self._counts = {doc_id: Counter(tokenize(text)) for doc_id, text in documents.items()}
         self._lengths = {doc_id: sum(c.values()) for doc_id, c in self._counts.items()}
         self._average_length = sum(self._lengths.values()) / max(1, len(self._lengths))
@@ -41,12 +43,12 @@ class Bm25Index:
         query_tokens = Counter(tokenize(query))
         scores: dict[str, float] = {}
         for doc_id, counts in self._counts.items():
-            length_norm = 1 - B + B * self._lengths[doc_id] / self._average_length
+            length_norm = 1 - self._b + self._b * self._lengths[doc_id] / self._average_length
             score = 0.0
             for token in query_tokens:
                 frequency = counts.get(token, 0)
                 if frequency:
-                    score += self._idf[token] * frequency * (K1 + 1) / (frequency + K1 * length_norm)
+                    score += self._idf[token] * frequency * (self._k1 + 1) / (frequency + self._k1 * length_norm)
             if score > 0:
                 scores[doc_id] = score
         ranked = sorted(scores.items(), key=lambda item: (-item[1], item[0]))
