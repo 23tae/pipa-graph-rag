@@ -18,3 +18,13 @@
 {"id":"q41","type":"위임","question":"개인정보 유출에 대비해 보험에 가입해야 하는 회사는 어떤 곳인가요?","required":["law:39-7","decree:48-7"],"related":[]}
 {"id":"q42","type":"위임","question":"개인정보 보호 인증을 받으려면 어떤 절차를 거치나요?","required":["law:32-2","decree:34-2"],"related":[]}
 {"id":"q43","type":"준용","question":"CCTV 운영·관리 방침은 어디에 어떻게 공개해야 하나요?","required":["decree:25","decree:31"],"related":[]}
+{"id":"q44","type":"단일","question":"개인정보에 대해 내가 가진 권리에는 어떤 것이 있나요?","required":["law:4"],"related":[]}
+{"id":"q45","type":"단일","question":"개인정보 수집 동의를 받을 때 여러 사항을 한꺼번에 묶어서 받아도 되나요?","required":["law:22"],"related":[]}
+{"id":"q46","type":"단일","question":"이름이나 연락처를 지워서 누구인지 알 수 없게 만든 정보에도 개인정보 보호법이 적용되나요?","required":["law:58-2"],"related":[]}
+{"id":"q47","type":"단일","question":"개인정보 보호법을 위반한 회사에 정부가 어떤 조치를 명할 수 있나요?","required":["law:64"],"related":[]}
+{"id":"q48","type":"위임","question":"개인정보 침해를 당하면 어디에 신고하나요?","required":["law:62","decree:59"],"related":[]}
+{"id":"q49","type":"위임","question":"개인정보 보호법을 위반하면 위반 사실이 공개되기도 하나요?","required":["law:66","decree:61"],"related":[]}
+{"id":"q50","type":"위임","question":"정부가 회사의 개인정보 해외 이전을 중단시킬 수 있나요?","required":["law:28-9","decree:29-11"],"related":[]}
+{"id":"q51","type":"위임","question":"여러 피해자가 함께 분쟁조정을 신청하려면 몇 명 이상이어야 하나요?","required":["law:49","decree:52"],"related":[]}
+{"id":"q52","type":"위임","question":"공공기관의 개인정보 보호 수준은 누가 어떤 기준으로 평가하나요?","required":["law:11-2","decree:13-2"],"related":[]}
+{"id":"q53","type":"준용","question":"개인정보 처리를 외주업체에 맡겼을 때 그 업체도 안전조치를 해야 하나요?","required":["law:26","law:29"],"related":[]}
