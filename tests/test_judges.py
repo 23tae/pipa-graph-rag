@@ -1,7 +1,7 @@
 import pytest
 
 from pipa_graph_rag.classify.judges import JUDGES, resolve_min_support
-from pipa_graph_rag.config import DECISIONS_MODEL, DEFAULT_JUDGE, JEV_MODEL
+from pipa_graph_rag.config import DECISIONS_MODEL, DEFAULT_JUDGE, JEV_MODEL, PPLX_MODEL
 
 
 @pytest.fixture(autouse=True)
@@ -34,6 +34,7 @@ def test_defaults_differ_by_judge_because_score_scales_differ():
     [
         ("decisions", f"decisions/{DECISIONS_MODEL}"),
         ("jev", f"jev/{JEV_MODEL}"),
+        ("pplx", f"pplx/{PPLX_MODEL}"),
     ],
 )
 def test_build_creates_the_named_judge(name, judge_name):

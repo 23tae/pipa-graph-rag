@@ -6,6 +6,7 @@ EXTRACTION_MODEL = "gpt-6-luna"
 ANSWER_MODEL = "gpt-6-luna"
 DECISIONS_MODEL = "gpt-6-luna"  # Decisions API가 지원하는 유일한 모델
 JEV_MODEL = "~typesafe/jev-latest"
+PPLX_MODEL = "perplexity/pplx-decider-v1.2"
 
 EXTRACTION_PROMPT_VERSION = "v3"
 SUPPORT_PROMPT_VERSION = "v1"
