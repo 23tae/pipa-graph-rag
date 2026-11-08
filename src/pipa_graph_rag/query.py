@@ -9,8 +9,17 @@ from pydantic import BaseModel
 
 from .answer import Answer, Answerer, OpenAIAnswerer, ask
 from .graph.reader import read_articles
-from .retrieval import Mode, Retrieval, build_index, retrieve
+from .retrieval import (
+    Mode,
+    Retrieval,
+    Seed,
+    build_embedding_index,
+    build_index,
+    retrieve,
+)
+from .retrieval.embedding import EmbeddingCache, EmbeddingIndex
 from .retrieval.expand import Neighbors
+from .retrieval.hybrid import HybridIndex, Searcher
 from .retrieval.neo4j_neighbors import concept_neighbors, reference_neighbors
 from .schema import Article
 
@@ -21,7 +30,7 @@ class QueryResult(BaseModel):
 
 
 class QueryEngine:
-    """조문을 읽고 키워드 색인을 만드는 일을 만들 때 한 번만 하고, run을 부를 때마다 질문을 처리한다."""
+    """조문을 읽고 시드 검색 색인을 만드는 일을 만들 때 한 번만 하고, run을 부를 때마다 질문을 처리한다."""
 
     def __init__(
         self,
@@ -30,20 +39,38 @@ class QueryEngine:
         references: Neighbors,
         concepts: Callable[[int | None], Neighbors],
         answerer: Answerer | None = None,
+        embedding: EmbeddingIndex | None = None,
     ):
         self.articles = {a.id: a for a in articles}
-        self._index = build_index(articles)
+        keyword = build_index(articles)
+        self._searchers: dict[Seed, Searcher] = {Seed.BM25: keyword}
+        if embedding is not None:
+            self._searchers[Seed.EMBEDDING] = embedding
+            self._searchers[Seed.HYBRID] = HybridIndex(keyword, embedding, len(embedding))
         self._references = references
         self._concepts = concepts
         self._answerer = answerer
 
     @classmethod
-    def from_graph(cls, driver: Driver, answerer: Answerer | None = None) -> QueryEngine:
+    def from_graph(
+        cls,
+        driver: Driver,
+        answerer: Answerer | None = None,
+        embedding_cache: EmbeddingCache | None = None,
+        format_query: Callable[[str], str] = lambda question: question,
+    ) -> QueryEngine:
+        articles = read_articles(driver)
+        embedding = (
+            build_embedding_index(articles, embedding_cache, format_query)
+            if embedding_cache is not None
+            else None
+        )
         return cls(
-            read_articles(driver),
+            articles,
             references=reference_neighbors(driver),
             concepts=lambda max_entity_degree: concept_neighbors(driver, max_entity_degree),
             answerer=answerer,
+            embedding=embedding,
         )
 
     def run(
@@ -55,9 +82,12 @@ class QueryEngine:
         depth: int,
         max_entity_degree: int | None = None,
         answer: bool = True,
+        seed: Seed = Seed.BM25,
     ) -> QueryResult:
+        if seed not in self._searchers:
+            raise ValueError(f"{seed.value} 시드 검색을 쓰려면 임베딩 색인이 필요하다")
         retrieval = retrieve(
-            self._index,
+            self._searchers[seed],
             question,
             mode=mode,
             top_k=top_k,

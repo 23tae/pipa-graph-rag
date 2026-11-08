@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from .config import QUERY_TOP_K
 from .query import QueryEngine
-from .retrieval import Mode
+from .retrieval import Mode, Seed
 
 DEPTHS = (1, 2)
 SKIP_VALUES = (None, 5, 10, 20, 50)  # 개념 확장에서 건너뛸 개체의 조문 수 기준. None이면 건너뛰지 않는다
@@ -31,13 +31,20 @@ class Condition(BaseModel):
     mode: Mode
     depth: int
     max_entity_degree: int | None = None
+    seed: Seed = Seed.BM25
+    top_k: int = QUERY_TOP_K
 
     @property
     def name(self) -> str:
+        """시드 검색이 BM25가 아니면 `:시드`를, 시드 수가 기본값이 아니면 `:k시드수`를 뒤에 붙인다."""
         if self.mode == Mode.KEYWORD:
-            return "keyword"
-        skip = "" if self.max_entity_degree is None else f"/skip{self.max_entity_degree}"
-        return f"{self.mode.value}/d{self.depth}{skip}"
+            base = "keyword"
+        else:
+            skip = "" if self.max_entity_degree is None else f"/skip{self.max_entity_degree}"
+            base = f"{self.mode.value}/d{self.depth}{skip}"
+        seed = "" if self.seed == Seed.BM25 else f":{self.seed.value}"
+        top_k = "" if self.top_k == QUERY_TOP_K else f":k{self.top_k}"
+        return base + seed + top_k
 
 
 class QuestionResult(BaseModel):
@@ -65,6 +72,11 @@ def conditions() -> list[Condition]:
     return result
 
 
+def with_seeds(base: list[Condition], seeds: list[Seed], top_ks: list[int]) -> list[Condition]:
+    """각 조건을 시드 검색 방식과 시드 수의 모든 조합으로 늘린다."""
+    return [c.model_copy(update={"seed": s, "top_k": k}) for c in base for s in seeds for k in top_ks]
+
+
 def load_questions(path: Path) -> list[Question]:
     return [Question.model_validate_json(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
@@ -79,10 +91,11 @@ def evaluate_question(
     result = engine.run(
         question.question,
         mode=condition.mode,
-        top_k=QUERY_TOP_K,
+        top_k=condition.top_k,
         depth=max(condition.depth, 1),
         max_entity_degree=condition.max_entity_degree,
         answer=answer,
+        seed=condition.seed,
     )
     retrieved = result.retrieval.expansion.articles
     required, everything = set(question.required), set(question.required) | set(question.related)

@@ -10,6 +10,8 @@ from .config import (
     DATA_DIR,
     DEFAULT_JUDGE,
     DEFAULT_WORKERS,
+    EMBEDDING_DIR,
+    EMBEDDING_MODEL,
     EVALUATION_DIR,
     EXTRACTION_MODEL,
     EXTRACTION_PROMPT_VERSION,
@@ -19,6 +21,8 @@ from .config import (
     QUERY_MODE,
     QUERY_TOP_K,
 )
+from .retrieval import Seed
+from .retrieval.embedders import EMBEDDERS
 
 EXTRACTION_MODEL_HELP = (
     "읽을 추출 결과의 모델 ID. 없으면 그 프롬프트 버전의 파일이 하나뿐일 때 그 파일을, 여럿이면 "
@@ -125,13 +129,42 @@ def main() -> None:
 
     sub.add_parser("judge-compare", help="표본에 두 판정기를 돌려 라벨과 대조한다")
 
+    embed_cmd = sub.add_parser("embed", help="조문과 평가 질문을 임베딩해 캐시에 저장한다(API를 부른다)")
+    embed_cmd.add_argument("--embedder", choices=list(EMBEDDERS), default=EMBEDDING_MODEL)
+    embed_cmd.add_argument(
+        "--dry-run", action="store_true", help="API를 부르지 않고 보낼 요청 수와 글자 수만 출력한다"
+    )
+
     eval_cmd = sub.add_parser("evaluate-search", help="질문과 정답 조문으로 검색 설정을 비교한다")
     eval_cmd.add_argument("--answer", action="store_true", help="답변도 만들어 인용을 정답과 대조한다")
     eval_cmd.add_argument(
         "--conditions",
         nargs="+",
         help="돌릴 조건 이름. 모드/깊이/건너뛰기 기준 순서이고 예는 keyword, references/d1, "
-        "references+concepts/d1/skip50이다. 없으면 모든 조건",
+        "references+concepts/d1/skip50이다. 없으면 모든 조건. --seeds나 --top-k를 주면 "
+        "조건마다 그 조합으로 늘려 돌리고, 이름 뒤에 :시드(bm25는 생략)와 :k시드수(기본값이면 생략)가 붙는다",
+    )
+    eval_cmd.add_argument(
+        "--seeds",
+        nargs="+",
+        choices=[seed.value for seed in Seed],
+        default=[Seed.BM25.value],
+        help="시드 조문을 고르는 방식. embedding과 hybrid는 embed로 만든 벡터가 필요하다",
+    )
+    eval_cmd.add_argument(
+        "--top-k",
+        nargs="+",
+        type=int,
+        default=[QUERY_TOP_K],
+        help="시드 조문 수. 여러 값을 주면 각각 돌린다",
+    )
+    eval_cmd.add_argument(
+        "--embedder", choices=list(EMBEDDERS), default=EMBEDDING_MODEL, help="embedding, hybrid 시드에 쓸 임베딩 모델"
+    )
+    eval_cmd.add_argument("--questions", default="questions.jsonl", help=f"{EVALUATION_DIR}의 질문 파일 이름")
+    eval_cmd.add_argument(
+        "--out",
+        help=f"{EVALUATION_DIR}에 저장할 결과 파일 이름. 질문 파일이나 시드 설정을 바꿀 때는 기존 결과를 덮어쓰지 않도록 꼭 준다",
     )
     eval_cmd.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
 
@@ -310,6 +343,30 @@ def main() -> None:
             by_judge[name] = {j.key: j.probability for j in judgments}
             print(format_metrics(name, evaluate(labels, by_judge[name], strata), judgments))
         print(format_difference("decisions", "jev", compare_judges(labels, by_judge["decisions"], by_judge["jev"])))
+    elif args.command == "embed":
+        from .collect import load_articles
+        from .evaluation import load_questions
+        from .retrieval import indexed_articles
+        from .retrieval.embedding import EmbeddingCache, cache_path, embed_missing, plan_embedding
+
+        spec = EMBEDDERS[args.embedder]
+        cache = EmbeddingCache(cache_path(EMBEDDING_DIR, spec.name))
+        texts = [a.text for a in indexed_articles(load_articles(DATA_DIR / "articles.json"))]
+        texts += [
+            spec.format_query(q.question)
+            for path in sorted(EVALUATION_DIR.glob("questions*.jsonl"))
+            for q in load_questions(path)
+        ]
+        plan = plan_embedding(texts, cache)
+        print(
+            f"{spec.name}: 텍스트 {len(set(texts))}개 중 캐시에 없는 것 {len(plan.missing)}개, "
+            f"요청 {plan.requests}번, {plan.characters:,}자"
+        )
+        if plan.missing and not args.dry_run:
+            summary = embed_missing(spec.build(), cache, texts)
+            tokens = "응답에 없음" if summary.tokens is None else f"{summary.tokens:,}토큰"
+            print(f"요청 {summary.requests}번, 응답이 알려 준 입력 {tokens}")
+            print(f"{cache.path}에 저장했다")
     elif args.command == "evaluate-search":
         from .evaluation import (
             bootstrap_difference,
@@ -319,20 +376,38 @@ def main() -> None:
             load_questions,
             summarize,
             summarize_by_type,
+            with_seeds,
         )
         from .graph.loader import connect
         from .query import QueryEngine
+        from .retrieval.embedding import EmbeddingCache, cache_path
 
-        questions = load_questions(EVALUATION_DIR / "questions.jsonl")
-        selected = [c for c in conditions() if not args.conditions or c.name in args.conditions]
+        seeds = [Seed(value) for value in args.seeds]
+        default_run = args.questions == "questions.jsonl" and seeds == [Seed.BM25] and args.top_k == [QUERY_TOP_K]
+        if args.out is None and not default_run:
+            raise SystemExit("질문 파일이나 시드 설정을 바꾼 결과는 기존 결과를 덮어쓰지 않도록 --out으로 파일 이름을 준다")
+        questions = load_questions(EVALUATION_DIR / args.questions)
+        base_conditions = [c for c in conditions() if not args.conditions or c.name in args.conditions]
+        selected = with_seeds(base_conditions, seeds, args.top_k)
+        cache = (
+            EmbeddingCache(cache_path(EMBEDDING_DIR, EMBEDDERS[args.embedder].name))
+            if any(seed != Seed.BM25 for seed in seeds)
+            else None
+        )
         driver = connect()
         try:
             results = evaluate_all(
-                QueryEngine.from_graph(driver), questions, selected, answer=args.answer, workers=args.workers
+                QueryEngine.from_graph(
+                    driver, embedding_cache=cache, format_query=EMBEDDERS[args.embedder].format_query
+                ),
+                questions,
+                selected,
+                answer=args.answer,
+                workers=args.workers,
             )
         finally:
             driver.close()
-        name = "results-answer.jsonl" if args.answer else "results.jsonl"
+        name = args.out or ("results-answer.jsonl" if args.answer else "results.jsonl")
         (EVALUATION_DIR / name).write_text(
             "".join(r.model_dump_json() + "\n" for r in results), encoding="utf-8"
         )
@@ -340,21 +415,28 @@ def main() -> None:
         by_condition = {}
         for r in results:
             by_condition.setdefault(r.condition, {})[r.question_id] = r
-        pairs = (
+        pairs = [
             ("keyword", "references/d1"),
             ("references/d1", "references+concepts/d1"),
             ("references/d1", "references+concepts/d1/skip50"),
             ("references+concepts/d1/skip50", "references+concepts/d1"),
-        )
-        for base, other in pairs:
-            if base not in by_condition or other not in by_condition:
+        ]
+        pairs += [  # 같은 조건과 시드 수에서 BM25 대비 다른 시드 검색의 차이
+            (c.model_copy(update={"seed": Seed.BM25, "top_k": k}).name, c.model_copy(update={"seed": seed, "top_k": k}).name)
+            for c in base_conditions
+            for seed in seeds
+            if seed != Seed.BM25
+            for k in args.top_k
+        ]
+        for base_name, other in pairs:
+            if base_name not in by_condition or other not in by_condition:
                 continue
             metrics = ("recall_required", "precision") + (("citation_recall",) if args.answer else ())
             for metric in metrics:
-                a = [getattr(by_condition[base][q.id], metric) for q in questions]
+                a = [getattr(by_condition[base_name][q.id], metric) for q in questions]
                 b = [getattr(by_condition[other][q.id], metric) for q in questions]
                 value, low, high = bootstrap_difference(a, b)
-                print(f"{other} − {base} {metric}: {value:+.3f} [{low:+.3f}, {high:+.3f}]")
+                print(f"{other} − {base_name} {metric}: {value:+.3f} [{low:+.3f}, {high:+.3f}]")
         for metric in ("recall_required",) + (("citation_recall",) if args.answer else ()):
             print(f"## 유형별 {metric}")
             for condition, by_type in summarize_by_type(results, questions, metric).items():

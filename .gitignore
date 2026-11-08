@@ -16,6 +16,7 @@ htmlcov/
 data/raw/
 data/processed/
 data/graph/
+data/embeddings/
 neo4j/
 
 .DS_Store

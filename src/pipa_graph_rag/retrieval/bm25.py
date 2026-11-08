@@ -9,9 +9,10 @@ from collections import Counter
 _WORD = re.compile(r"[0-9A-Za-z가-힣]+")
 NGRAM_SIZES = (2, 3)
 
-# BM25의 일반적인 기본값. 이 데이터에서 조정하지 않았다.
+# K1은 BM25의 일반적인 기본값이다. B는 일반적인 기본값 0.75 대신 0.4다. 개발용 질문 23개에서 K1 {0.9, 1.2, 1.5, 2.0} ×
+# B {0.4, 0.75, 0.9}를 훑어 시드 3개 재현율이 가장 높은 조합(B 0.4) 중 기본값에 가까운 것이다. 이득은 질문 1개 차이다.
 K1 = 1.5
-B = 0.75
+B = 0.4
 
 
 def tokenize(text: str) -> list[str]:
@@ -24,7 +25,9 @@ def tokenize(text: str) -> list[str]:
 
 
 class Bm25Index:
-    def __init__(self, documents: dict[str, str]):
+    def __init__(self, documents: dict[str, str], k1: float = K1, b: float = B):
+        self._k1 = k1
+        self._b = b
         self._counts = {doc_id: Counter(tokenize(text)) for doc_id, text in documents.items()}
         self._lengths = {doc_id: sum(c.values()) for doc_id, c in self._counts.items()}
         self._average_length = sum(self._lengths.values()) / max(1, len(self._lengths))
@@ -41,12 +44,12 @@ class Bm25Index:
         query_tokens = Counter(tokenize(query))
         scores: dict[str, float] = {}
         for doc_id, counts in self._counts.items():
-            length_norm = 1 - B + B * self._lengths[doc_id] / self._average_length
+            length_norm = 1 - self._b + self._b * self._lengths[doc_id] / self._average_length
             score = 0.0
             for token in query_tokens:
                 frequency = counts.get(token, 0)
                 if frequency:
-                    score += self._idf[token] * frequency * (K1 + 1) / (frequency + K1 * length_norm)
+                    score += self._idf[token] * frequency * (self._k1 + 1) / (frequency + self._k1 * length_norm)
             if score > 0:
                 scores[doc_id] = score
         ranked = sorted(scores.items(), key=lambda item: (-item[1], item[0]))
