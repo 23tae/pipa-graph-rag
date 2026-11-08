@@ -19,6 +19,7 @@ from .config import (
     QUERY_DEPTH,
     QUERY_MAX_ENTITY_DEGREE,
     QUERY_MODE,
+    QUERY_SEED,
     QUERY_TOP_K,
 )
 from .retrieval import Seed
@@ -113,7 +114,19 @@ def main() -> None:
         help="keyword: 키워드 검색만, references: 조문 사이 관계로 확장, references+concepts: 개념 연결로도 확장",
     )
     ask_cmd.add_argument("--depth", type=int, default=QUERY_DEPTH, help="확장 단계 수")
-    ask_cmd.add_argument("--top-k", type=int, default=QUERY_TOP_K, help="키워드 검색으로 가져올 시드 조문 수")
+    ask_cmd.add_argument("--top-k", type=int, default=QUERY_TOP_K, help="시드 조문 수")
+    ask_cmd.add_argument(
+        "--seed",
+        choices=["bm25", "embedding"],
+        default=QUERY_SEED,
+        help="시드 조문을 고르는 방식. embedding은 질의마다 임베딩 API를 부르고 load-embeddings가 필요하다",
+    )
+    ask_cmd.add_argument(
+        "--embedder",
+        choices=list(EMBEDDERS),
+        default=EMBEDDING_MODEL,
+        help="--seed embedding에 쓸 임베딩 모델. load-embeddings로 넣은 모델과 같아야 한다",
+    )
     ask_cmd.add_argument(
         "--max-entity-degree",
         type=int,
@@ -133,6 +146,14 @@ def main() -> None:
     embed_cmd.add_argument("--embedder", choices=list(EMBEDDERS), default=EMBEDDING_MODEL)
     embed_cmd.add_argument(
         "--dry-run", action="store_true", help="API를 부르지 않고 보낼 요청 수와 글자 수만 출력한다"
+    )
+
+    load_embeddings_cmd = sub.add_parser(
+        "load-embeddings", help="embed로 만든 조문 벡터를 Neo4j에 넣고 벡터 인덱스를 만든다(API를 부르지 않는다)"
+    )
+    load_embeddings_cmd.add_argument("--embedder", choices=list(EMBEDDERS), default=EMBEDDING_MODEL)
+    load_embeddings_cmd.add_argument(
+        "--reset", action="store_true", help="벡터를 넣지 않고 Neo4j의 벡터 인덱스와 조문 벡터를 지운다"
     )
 
     eval_cmd = sub.add_parser("evaluate-search", help="질문과 정답 조문으로 검색 설정을 비교한다")
@@ -160,6 +181,13 @@ def main() -> None:
     )
     eval_cmd.add_argument(
         "--embedder", choices=list(EMBEDDERS), default=EMBEDDING_MODEL, help="embedding, hybrid 시드에 쓸 임베딩 모델"
+    )
+    eval_cmd.add_argument(
+        "--vectors",
+        choices=["memory", "neo4j"],
+        default="memory",
+        help="임베딩 시드를 계산하는 곳. memory는 캐시의 벡터로 메모리에서 정확히 계산하고, neo4j는 load-embeddings로 넣은 "
+        "벡터 인덱스를 쓴다(질문 벡터는 캐시에서 읽는다). neo4j는 hybrid를 지원하지 않는다",
     )
     eval_cmd.add_argument("--questions", default="questions.jsonl", help=f"{EVALUATION_DIR}의 질문 파일 이름")
     eval_cmd.add_argument(
@@ -264,10 +292,20 @@ def main() -> None:
         from .graph.loader import connect
         from .query import QueryEngine
         from .retrieval import Mode
+        from .retrieval.embedders import MissingApiKey, live_query_embedder
+        from .retrieval.neo4j_embedding import EmbeddingIndexMissing, Neo4jEmbeddingIndex
 
+        seed = Seed(args.seed)
         driver = connect()
         try:
-            engine = QueryEngine.from_graph(driver)
+            embedding = None
+            if seed == Seed.EMBEDDING:
+                spec = EMBEDDERS[args.embedder]
+                try:
+                    embedding = Neo4jEmbeddingIndex(driver, spec.name, live_query_embedder(spec))
+                except (MissingApiKey, EmbeddingIndexMissing) as error:
+                    raise SystemExit(str(error)) from error
+            engine = QueryEngine.from_graph(driver, embedding=embedding)
             result = engine.run(
                 args.question,
                 mode=Mode(args.mode),
@@ -275,6 +313,7 @@ def main() -> None:
                 depth=args.depth,
                 max_entity_degree=args.max_entity_degree or None,
                 answer=not args.no_answer,
+                seed=seed,
             )
         finally:
             driver.close()
@@ -283,7 +322,11 @@ def main() -> None:
         print(f"가져온 조문 {len(expansion.articles)}개 (모드 {retrieval.mode.value}, 깊이 {retrieval.depth})")
         for article_id in expansion.articles:
             if article_id in retrieval.scores:
-                how = f"키워드 검색 {retrieval.scores[article_id]:.1f}"
+                how = (
+                    f"임베딩 검색 {retrieval.scores[article_id]:.3f}"
+                    if seed == Seed.EMBEDDING
+                    else f"키워드 검색 {retrieval.scores[article_id]:.1f}"
+                )
             else:
                 reach = expansion.reached[article_id]
                 how = f"{reach.source}에서 {reach.via} (깊이 {reach.depth})"
@@ -367,6 +410,30 @@ def main() -> None:
             tokens = "응답에 없음" if summary.tokens is None else f"{summary.tokens:,}토큰"
             print(f"요청 {summary.requests}번, 응답이 알려 준 입력 {tokens}")
             print(f"{cache.path}에 저장했다")
+    elif args.command == "load-embeddings":
+        from .graph.loader import connect
+        from .graph.reader import read_articles
+        from .retrieval import indexed_articles
+        from .retrieval.embedding import EmbeddingCache, EmbeddingNotCached, cache_path
+        from .retrieval.neo4j_embedding import load_embeddings, reset_embeddings
+
+        driver = connect()
+        try:
+            if args.reset:
+                reset_embeddings(driver)
+                print("벡터 인덱스와 조문 벡터를 지웠다")
+            else:
+                spec = EMBEDDERS[args.embedder]
+                cache = EmbeddingCache(cache_path(EMBEDDING_DIR, spec.name))
+                try:
+                    vectors = {a.id: cache.get(a.text) for a in indexed_articles(read_articles(driver))}
+                except EmbeddingNotCached as error:
+                    raise SystemExit(str(error)) from error
+                loaded = load_embeddings(driver, vectors, spec.name)
+                dimension = len(next(iter(vectors.values())))
+                print(f"조문 {loaded}개의 벡터({dimension}차원, {spec.name})를 넣고 벡터 인덱스를 만들었다")
+        finally:
+            driver.close()
     elif args.command == "evaluate-search":
         from .evaluation import (
             bootstrap_difference,
@@ -381,6 +448,7 @@ def main() -> None:
         from .graph.loader import connect
         from .query import QueryEngine
         from .retrieval.embedding import EmbeddingCache, cache_path
+        from .retrieval.neo4j_embedding import EmbeddingIndexMissing, Neo4jEmbeddingIndex
 
         seeds = [Seed(value) for value in args.seeds]
         default_run = args.questions == "questions.jsonl" and seeds == [Seed.BM25] and args.top_k == [QUERY_TOP_K]
@@ -394,11 +462,20 @@ def main() -> None:
             if any(seed != Seed.BM25 for seed in seeds)
             else None
         )
+        spec = EMBEDDERS[args.embedder]
+        if args.vectors == "neo4j" and Seed.HYBRID in seeds:
+            raise SystemExit("--vectors neo4j는 hybrid를 지원하지 않는다(벡터 인덱스는 상위 k개만 돌려준다)")
         driver = connect()
         try:
+            embedding = None
+            if cache is not None and args.vectors == "neo4j":
+                try:
+                    embedding = Neo4jEmbeddingIndex(driver, spec.name, lambda q: cache.get(spec.format_query(q)))
+                except EmbeddingIndexMissing as error:
+                    raise SystemExit(str(error)) from error
             results = evaluate_all(
                 QueryEngine.from_graph(
-                    driver, embedding_cache=cache, format_query=EMBEDDERS[args.embedder].format_query
+                    driver, embedding_cache=cache, format_query=spec.format_query, embedding=embedding
                 ),
                 questions,
                 selected,
