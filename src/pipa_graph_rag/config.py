@@ -5,8 +5,10 @@ from pathlib import Path
 EXTRACTION_MODEL = "gpt-6-luna"  # OpenAI Responses API로 호출하고 구조화 출력을 지원하는 모델이어야 한다
 ANSWER_MODEL = "gpt-6-luna"  # 위와 같다
 DECISIONS_MODEL = "gpt-6-luna"  # OpenAI Decisions API가 지원하는 유일한 모델
-JEV_MODEL = "~typesafe/jev-latest"  # OpenRouter 모델 ID. decisions 엔드포인트가 noul 응답을 내는 모델이어야 한다
-PPLX_MODEL = "perplexity/pplx-decider-v1.2"  # 위와 같다
+# OpenRouter 모델 ID. decisions 엔드포인트가 noul 응답을 내는 모델이어야 한다. 적재 기준 기본값이 이 버전의 확률에
+# 맞춘 값이라 버전을 고정했다. 모델이 종료돼 호출이 오류가 나면 ID를 바꾸고 classify/judges.py의 기준을 다시 정한다.
+JEV_MODEL = "typesafe/jev-1.14"
+PPLX_MODEL = "perplexity/pplx-decider-v1.2"
 
 EXTRACTION_PROMPT_VERSION = "v3"  # extraction/prompts에 있는 버전: v2 | v3
 SUPPORT_PROMPT_VERSION = "v1"  # classify/prompts/support에 있는 버전: v1
