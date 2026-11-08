@@ -3,16 +3,16 @@ from pathlib import Path
 
 import pytest
 
-from pipa_statute_graph_rag.classify.base import JudgeResult, SupportItem
-from pipa_statute_graph_rag.classify.prompt import available_versions, load_prompt
-from pipa_statute_graph_rag.classify.support import (
+from pipa_graph_rag.classify.base import JudgeResult, SupportItem
+from pipa_graph_rag.classify.prompt import available_versions, load_prompt
+from pipa_graph_rag.classify.support import (
     SupportRecord,
     build_items,
     filter_by_support,
     load_support,
     run_judgment,
 )
-from pipa_statute_graph_rag.schema import (
+from pipa_graph_rag.schema import (
     Article,
     ConceptExtraction,
     ConceptRelation,

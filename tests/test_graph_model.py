@@ -1,5 +1,5 @@
-from pipa_statute_graph_rag.graph.model import build_graph, is_deleted
-from pipa_statute_graph_rag.schema import (
+from pipa_graph_rag.graph.model import build_graph, is_deleted
+from pipa_graph_rag.schema import (
     Article,
     ArticleReference,
     ConceptExtraction,

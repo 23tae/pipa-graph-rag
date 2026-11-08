@@ -1,6 +1,6 @@
 # 개념 대응표
 
-개인정보 온톨로지 [PrOnto](https://link.springer.com/chapter/10.1007/978-3-319-98349-3_11)의 각 모듈이 이 프로젝트의 스키마(`src/pipa_statute_graph_rag/schema.py`)와 개인정보 보호법·시행령의 개념에 어떻게 대응하는지 정리한 표이다. 법령 개념의 근거 조문은 본법 기준이다.
+개인정보 온톨로지 [PrOnto](https://link.springer.com/chapter/10.1007/978-3-319-98349-3_11)의 각 모듈이 이 프로젝트의 스키마(`src/pipa_graph_rag/schema.py`)와 개인정보 보호법·시행령의 개념에 어떻게 대응하는지 정리한 표이다. 법령 개념의 근거 조문은 본법 기준이다.
 
 | PrOnto 모듈 | 스키마 | 한국 법령 |
 | --- | --- | --- |

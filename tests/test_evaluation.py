@@ -1,7 +1,7 @@
 import math
 
-from pipa_statute_graph_rag.answer import AnswerOutput
-from pipa_statute_graph_rag.evaluation import (
+from pipa_graph_rag.answer import AnswerOutput
+from pipa_graph_rag.evaluation import (
     Condition,
     Question,
     bootstrap_difference,
@@ -11,10 +11,10 @@ from pipa_statute_graph_rag.evaluation import (
     summarize,
     summarize_by_type,
 )
-from pipa_statute_graph_rag.query import QueryEngine
-from pipa_statute_graph_rag.retrieval import Mode
-from pipa_statute_graph_rag.retrieval.expand import Edge
-from pipa_statute_graph_rag.schema import Article
+from pipa_graph_rag.query import QueryEngine
+from pipa_graph_rag.retrieval import Mode
+from pipa_graph_rag.retrieval.expand import Edge
+from pipa_graph_rag.schema import Article
 
 
 def article(id: str, text: str) -> Article:

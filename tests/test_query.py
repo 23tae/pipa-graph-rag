@@ -1,9 +1,9 @@
-from pipa_statute_graph_rag.answer import AnswerOutput
-from pipa_statute_graph_rag.graph.reader import read_articles
-from pipa_statute_graph_rag.query import QueryEngine
-from pipa_statute_graph_rag.retrieval import Mode
-from pipa_statute_graph_rag.retrieval.expand import Edge
-from pipa_statute_graph_rag.schema import Article
+from pipa_graph_rag.answer import AnswerOutput
+from pipa_graph_rag.graph.reader import read_articles
+from pipa_graph_rag.query import QueryEngine
+from pipa_graph_rag.retrieval import Mode
+from pipa_graph_rag.retrieval.expand import Edge
+from pipa_graph_rag.schema import Article
 
 
 def article(id: str, text: str) -> Article:

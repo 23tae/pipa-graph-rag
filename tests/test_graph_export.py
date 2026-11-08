@@ -1,5 +1,5 @@
-from pipa_statute_graph_rag.graph.export import load_graph_file, save_graph, subset
-from pipa_statute_graph_rag.graph.model import GraphData
+from pipa_graph_rag.graph.export import load_graph_file, save_graph, subset
+from pipa_graph_rag.graph.model import GraphData
 
 
 def graph() -> GraphData:

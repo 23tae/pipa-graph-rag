@@ -2,9 +2,9 @@ import hashlib
 
 import pytest
 
-from pipa_statute_graph_rag.config import EXTRACTION_PROMPT_VERSION
-from pipa_statute_graph_rag.extraction.prompt import available_versions, load_prompt
-from pipa_statute_graph_rag.schema import ALLOWED_ENDPOINTS
+from pipa_graph_rag.config import EXTRACTION_PROMPT_VERSION
+from pipa_graph_rag.extraction.prompt import available_versions, load_prompt
+from pipa_graph_rag.schema import ALLOWED_ENDPOINTS
 
 # 만든 버전의 본문은 고치지 않는다. 이 값이 바뀌면 그 버전으로 만든 결과를 다시 만들 수 없다.
 # 프롬프트를 바꾸려면 새 버전 파일을 추가하고 여기에 해시를 더한다.

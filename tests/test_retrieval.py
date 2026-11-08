@@ -1,9 +1,9 @@
 import pytest
 
-from pipa_statute_graph_rag.retrieval import Mode, build_index, retrieve
-from pipa_statute_graph_rag.retrieval.bm25 import Bm25Index, tokenize
-from pipa_statute_graph_rag.retrieval.expand import Edge, expand
-from pipa_statute_graph_rag.schema import Article
+from pipa_graph_rag.retrieval import Mode, build_index, retrieve
+from pipa_graph_rag.retrieval.bm25 import Bm25Index, tokenize
+from pipa_graph_rag.retrieval.expand import Edge, expand
+from pipa_graph_rag.schema import Article
 
 
 def article(id: str, text: str) -> Article:

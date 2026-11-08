@@ -1,6 +1,6 @@
-from pipa_statute_graph_rag.references import build_references
-from pipa_statute_graph_rag.references.extract import extract_references
-from pipa_statute_graph_rag.schema import Article, ReferenceKind
+from pipa_graph_rag.references import build_references
+from pipa_graph_rag.references.extract import extract_references
+from pipa_graph_rag.schema import Article, ReferenceKind
 
 # 실제 법령 문구가 아니라 표현 형태만 본뜬 합성 문장이다.
 

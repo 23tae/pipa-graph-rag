@@ -1,4 +1,4 @@
-from pipa_statute_graph_rag.collect.parser import parse_articles, strip_secrets
+from pipa_graph_rag.collect.parser import parse_articles, strip_secrets
 
 # API 응답 구조를 본뜬 합성 샘플이다. 실제 법령 문구가 아니다.
 RAW = {
