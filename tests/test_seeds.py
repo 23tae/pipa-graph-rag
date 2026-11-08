@@ -78,6 +78,27 @@ def test_hybrid_seed_merges_keyword_and_embedding_results():
     assert result.retrieved == ["law:1", "law:2"]
 
 
+def test_a_searcher_that_only_returns_top_k_supports_the_embedding_seed_but_not_hybrid():
+    class TopKOnly:
+        def search(self, query, k):
+            return [("law:2", 0.9)][:k]
+
+    engine_with_neo4j = QueryEngine(
+        ARTICLES,
+        references=lambda ids: [],
+        concepts=lambda degree: lambda ids: [],
+        embedding=TopKOnly(),
+    )
+    found = evaluate_question(
+        engine_with_neo4j, QUESTION, Condition(mode=Mode.KEYWORD, depth=0, seed=Seed.EMBEDDING, top_k=1), answer=False
+    )
+    assert found.retrieved == ["law:2"]
+    with pytest.raises(ValueError, match="임베딩 색인"):
+        evaluate_question(
+            engine_with_neo4j, QUESTION, Condition(mode=Mode.KEYWORD, depth=0, seed=Seed.HYBRID), answer=False
+        )
+
+
 def test_embedding_seed_without_an_embedding_index_is_an_error():
     with pytest.raises(ValueError, match="임베딩 색인"):
         evaluate_question(

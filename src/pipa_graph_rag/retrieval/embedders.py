@@ -66,10 +66,15 @@ class OpenRouterEmbedder:
         )
 
 
+class MissingApiKey(Exception):
+    """임베딩 API를 부르는 데 필요한 환경변수가 없다."""
+
+
 @dataclass(frozen=True)
 class EmbedderSpec:
     name: str  # 캐시 파일 이름. API 키 없이 알 수 있어야 해서 만들어진 임베더에서 읽지 않는다
     build: Callable[[], Embedder]
+    api_key_env: str  # 호출에 필요한 API 키의 환경변수 이름
     query_instruction: str | None = None  # 질문 앞에 붙이는 작업 설명. 조문에는 붙이지 않는다
 
     def format_query(self, question: str) -> str:
@@ -80,16 +85,28 @@ class EmbedderSpec:
 
 EMBEDDERS: dict[str, EmbedderSpec] = {
     "openai-small": EmbedderSpec(
-        "openai/text-embedding-3-small", lambda: OpenAIEmbedder("text-embedding-3-small")
+        "openai/text-embedding-3-small",
+        lambda: OpenAIEmbedder("text-embedding-3-small"),
+        "OPENAI_API_KEY",
     ),
     "qwen3-8b": EmbedderSpec(
         "openrouter/qwen/qwen3-embedding-8b",
         lambda: OpenRouterEmbedder("qwen/qwen3-embedding-8b", variant="floor"),
+        "OPENROUTER_API_KEY",
         query_instruction=QWEN_QUERY_INSTRUCTION,
     ),
     # 질문에 지시문을 붙이지 않는 qwen3-8b. 같은 캐시 파일을 쓴다. 지시문의 효과를 비교하는 데 쓴다
     "qwen3-8b-plain": EmbedderSpec(
         "openrouter/qwen/qwen3-embedding-8b",
         lambda: OpenRouterEmbedder("qwen/qwen3-embedding-8b", variant="floor"),
+        "OPENROUTER_API_KEY",
     ),
 }
+
+
+def live_query_embedder(spec: EmbedderSpec) -> Callable[[str], list[float]]:
+    """질문을 호출할 때마다 임베딩 API로 임베딩하는 함수. API 키가 없으면 MissingApiKey를 낸다."""
+    if not os.environ.get(spec.api_key_env):
+        raise MissingApiKey(f"{spec.name} 임베딩에는 환경변수 {spec.api_key_env}가 필요하다(.env에 넣는다)")
+    embedder = spec.build()
+    return lambda question: embedder.embed([spec.format_query(question)]).vectors[0]

@@ -39,13 +39,14 @@ class QueryEngine:
         references: Neighbors,
         concepts: Callable[[int | None], Neighbors],
         answerer: Answerer | None = None,
-        embedding: EmbeddingIndex | None = None,
+        embedding: Searcher | None = None,
     ):
         self.articles = {a.id: a for a in articles}
         keyword = build_index(articles)
         self._searchers: dict[Seed, Searcher] = {Seed.BM25: keyword}
         if embedding is not None:
             self._searchers[Seed.EMBEDDING] = embedding
+        if isinstance(embedding, EmbeddingIndex):  # 하이브리드는 전체 순위가 필요한데 Neo4j 벡터 인덱스는 상위 k개만 준다
             self._searchers[Seed.HYBRID] = HybridIndex(keyword, embedding, len(embedding))
         self._references = references
         self._concepts = concepts
@@ -58,13 +59,12 @@ class QueryEngine:
         answerer: Answerer | None = None,
         embedding_cache: EmbeddingCache | None = None,
         format_query: Callable[[str], str] = lambda question: question,
+        embedding: Searcher | None = None,
     ) -> QueryEngine:
+        """embedding을 주면 그 임베딩 검색을 쓰고, 없고 embedding_cache가 있으면 캐시의 벡터로 메모리에서 계산한다."""
         articles = read_articles(driver)
-        embedding = (
-            build_embedding_index(articles, embedding_cache, format_query)
-            if embedding_cache is not None
-            else None
-        )
+        if embedding is None and embedding_cache is not None:
+            embedding = build_embedding_index(articles, embedding_cache, format_query)
         return cls(
             articles,
             references=reference_neighbors(driver),
