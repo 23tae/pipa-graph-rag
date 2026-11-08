@@ -12,7 +12,6 @@ SUPPORT_PROMPT_VERSION = "v1"
 ANSWER_PROMPT_VERSION = "v1"
 
 DEFAULT_JUDGE = "decisions"
-MIN_SUPPORT = 0.1  # 이 확률 이상인 개념 관계만 그래프에 넣는다. 0이면 모두 넣는다
 
 QUERY_MODE = "references+concepts"
 QUERY_DEPTH = 1

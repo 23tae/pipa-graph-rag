@@ -4,6 +4,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from .classify.judges import JUDGES, resolve_min_support
 from .config import (
     COMPARISON_DIR,
     DATA_DIR,
@@ -13,8 +14,6 @@ from .config import (
     EXTRACTION_MODEL,
     EXTRACTION_PROMPT_VERSION,
     GRAPH_DIR,
-    JEV_MODEL,
-    MIN_SUPPORT,
     QUERY_DEPTH,
     QUERY_MAX_ENTITY_DEGREE,
     QUERY_MODE,
@@ -71,7 +70,7 @@ def main() -> None:
     )
     judge_cmd.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     judge_cmd.add_argument(
-        "--judge", choices=["decisions", "jev"], default=DEFAULT_JUDGE, help=f"판정기. 기본 {DEFAULT_JUDGE}"
+        "--judge", choices=list(JUDGES), default=DEFAULT_JUDGE, help=f"판정기. 기본 {DEFAULT_JUDGE}"
     )
 
     graph_cmd = sub.add_parser("load-graph", help="조문, 조문 관계, 추출 결과를 Neo4j에 적재한다")
@@ -82,14 +81,15 @@ def main() -> None:
         help=f"적재할 추출 결과의 프롬프트 버전. 기본 {EXTRACTION_PROMPT_VERSION}",
     )
     graph_cmd.add_argument("--reset", action="store_true", help="적재 전에 Neo4j의 모든 노드를 지운다")
+    defaults = ", ".join(f"{name} {spec.min_support}" for name, spec in JUDGES.items())
     graph_cmd.add_argument(
         "--min-support",
         type=float,
-        default=MIN_SUPPORT,
-        help=f"판정 확률이 이 값 이상인 개념 관계만 적재한다. 0이면 모두 적재한다. 기본 {MIN_SUPPORT}",
+        default=None,
+        help=f"판정 확률이 이 값 이상인 개념 관계만 적재한다. 0이면 모두 적재한다. 없으면 판정기별 기본값({defaults})",
     )
     graph_cmd.add_argument(
-        "--judge", choices=["decisions", "jev"], default=DEFAULT_JUDGE, help="--min-support에 쓸 판정 결과"
+        "--judge", choices=list(JUDGES), default=DEFAULT_JUDGE, help=f"--min-support에 쓸 판정 결과. 기본 {DEFAULT_JUDGE}"
     )
 
     export_cmd = sub.add_parser("export-graph", help="Neo4j 그래프를 JSON 파일로 내보낸다")
@@ -174,14 +174,7 @@ def main() -> None:
         version = args.extraction_prompt_version
         extraction_path, model = _resolve_extraction(args.extraction_model, version)
         extractions = {r.article_id: r.extraction for r in load_records(extraction_path)}
-        if args.judge == "jev":
-            from .classify.openrouter import OpenRouterJudge
-
-            judge = OpenRouterJudge("jev", JEV_MODEL)
-        else:
-            from .classify.decisions import DecisionsJudge
-
-            judge = DecisionsJudge()
+        judge = JUDGES[args.judge].build()
         out_path = DATA_DIR / "support" / f"{model}-{version}-{args.judge}.jsonl"
         saved, failures = run_judgment(
             load_articles(DATA_DIR / "articles.json"), extractions, judge, out_path, workers=args.workers
@@ -206,13 +199,14 @@ def main() -> None:
         version = args.prompt_version
         extraction_path, model = _resolve_extraction(args.extraction_model, version)
         extractions = [r.extraction for r in load_records(extraction_path)]
-        if args.min_support:
+        min_support = resolve_min_support(args.judge, args.min_support)
+        if min_support:
             from .classify.support import filter_by_support, load_support
 
             support = load_support(DATA_DIR / "support" / f"{model}-{version}-{args.judge}.jsonl")
             before = sum(len(e.relations) for e in extractions)
-            extractions = filter_by_support(extractions, support, args.min_support)
-            print(f"판정 확률 {args.min_support} 이상만 적재: 개념 관계 {before} → "
+            extractions = filter_by_support(extractions, support, min_support)
+            print(f"판정기 {args.judge}의 확률 {min_support} 이상만 적재: 개념 관계 {before} → "
                   f"{sum(len(e.relations) for e in extractions)}")
         data = build_graph(
             load_articles(DATA_DIR / "articles.json"),
@@ -306,15 +300,7 @@ def main() -> None:
         for name in ("decisions", "jev"):
             path = COMPARISON_DIR / f"judgments-{name}.jsonl"
             if not path.exists():
-                if name == "jev":
-                    from .classify.openrouter import OpenRouterJudge
-
-                    judge = OpenRouterJudge("jev", JEV_MODEL)
-                else:
-                    from .classify.decisions import DecisionsJudge
-
-                    judge = DecisionsJudge()
-                write_jsonl(path, run_judge(judge, articles, sample))
+                write_jsonl(path, run_judge(JUDGES[name].build(), articles, sample))
             judgments = read_jsonl(path, Judgment)
             by_judge[name] = {j.key: j.probability for j in judgments}
             print(format_metrics(name, evaluate(labels, by_judge[name], strata), judgments))
