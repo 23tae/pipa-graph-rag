@@ -9,30 +9,48 @@ from pydantic import BaseModel
 from ..graph.model import is_deleted
 from ..schema import Article
 from .bm25 import Bm25Index
+from .embedding import EmbeddingCache, EmbeddingIndex
 from .expand import Expansion, Neighbors, expand
+from .hybrid import Searcher
 
 
 class Mode(StrEnum):
-    KEYWORD = "keyword"  # 키워드 검색만
-    REFERENCES = "references"  # 키워드 검색 + 조문 사이 관계로 확장
+    KEYWORD = "keyword"  # 시드 검색만(확장 없음). 시드는 Seed로 고른다
+    REFERENCES = "references"  # 시드 검색 + 조문 사이 관계로 확장
     REFERENCES_CONCEPTS = "references+concepts"  # 위에 개념 연결로도 확장
+
+
+class Seed(StrEnum):
+    BM25 = "bm25"  # 문자 n-gram BM25
+    EMBEDDING = "embedding"  # 임베딩 코사인 유사도
+    HYBRID = "hybrid"  # 위 둘의 순위를 합산
 
 
 class Retrieval(BaseModel):
     question: str
     mode: Mode
     depth: int
-    scores: dict[str, float]  # 시드 조문의 BM25 점수
+    scores: dict[str, float]  # 시드 조문의 점수. 시드 검색 방식마다 눈금이 다르다
     expansion: Expansion
 
 
+def indexed_articles(articles: list[Article]) -> list[Article]:
+    """삭제된 조문을 뺀 색인 대상 조문."""
+    return [a for a in articles if not is_deleted(a)]
+
+
 def build_index(articles: list[Article]) -> Bm25Index:
-    """삭제된 조문을 뺀 조문 본문으로 색인한다(조문 제목과 항목이 본문에 들어 있다)."""
-    return Bm25Index({a.id: a.text for a in articles if not is_deleted(a)})
+    """조문 본문으로 색인한다(조문 제목과 항목이 본문에 들어 있다)."""
+    return Bm25Index({a.id: a.text for a in indexed_articles(articles)})
+
+
+def build_embedding_index(articles: list[Article], cache: EmbeddingCache) -> EmbeddingIndex:
+    """캐시에 저장된 벡터로 색인한다. 질문 벡터도 캐시에서만 읽어서 API를 부르지 않는다."""
+    return EmbeddingIndex({a.id: cache.get(a.text) for a in indexed_articles(articles)}, cache.get)
 
 
 def retrieve(
-    index: Bm25Index,
+    index: Searcher,
     question: str,
     *,
     mode: Mode,
