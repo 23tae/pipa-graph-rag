@@ -20,10 +20,11 @@ docker compose up -d
 
 | 변수 | 용도 |
 | --- | --- |
-| `LAW_OC` | 법제처 OPEN API 인증키 |
+| `LAW_OC` | 법제처 OPEN API 인증키([국가법령정보 공동활용](https://open.law.go.kr)에서 신청) |
 | `OPENAI_API_KEY` | OpenAI API 키 |
 | `OPENROUTER_API_KEY` | OpenRouter API 키(`--judge jev`, `--judge pplx`에만 필요) |
 | `NEO4J_PASSWORD` | Neo4j 비밀번호 |
+| `NEO4J_URI`, `NEO4J_USER` | 선택. 기본은 `bolt://localhost:7687`, `neo4j` |
 
 Neo4j Browser: http://localhost:7474
 
@@ -44,7 +45,7 @@ uv run pipa-graph-rag ask "개인정보 유출 사실을 알게 되면 정보주
 
 ## 사용법
 
-아래 순서대로 실행한다. 각 단계의 결과는 `data/processed/`에 저장되고, 다시 실행하면 저장되지 않은 조문만 처리한다.
+아래 순서대로 실행한다. 각 단계의 결과는 `data/processed/`에 저장되고, 다시 실행하면 저장되지 않은 조문만 처리한다. 3, 4단계는 API 비용이 든다. 명령마다 옵션은 `uv run pipa-graph-rag <명령> --help`로 본다.
 
 ### 1. 조문 수집
 
@@ -135,7 +136,7 @@ uv run pipa-graph-rag evaluate-search --answer --conditions keyword references/d
 | `references`, 깊이 1 | 20.8 | 0.913 |
 | `references+concepts`, 깊이 1, `--max-entity-degree 50` (기본) | 52.5 | 1.000 |
 
-판정기 두 개(Decisions API, Jev)의 정확도 비교는 `judge-sample`과 `judge-compare`로 한다. 라벨 90개로 쟀을 때 정확도는 둘 다 약 78%였고 차이를 구분할 수 없었다.
+판정기 두 개(Decisions API, Jev)의 정확도 비교는 `judge-sample`과 `judge-compare`로 한다. `judge-compare`는 이 두 판정기만 비교한다. 라벨 90개로 쟀을 때 정확도는 둘 다 약 78%였고 차이를 구분할 수 없었다.
 
 ## 그래프 구조
 
