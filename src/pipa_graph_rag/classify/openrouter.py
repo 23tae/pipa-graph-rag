@@ -1,4 +1,4 @@
-"""TypeSafe의 Jev로 인용이 주장을 뒷받침할 확률을 구한다. OpenRouter의 decisions 엔드포인트(alpha)를 쓴다."""
+"""OpenRouter의 decisions 엔드포인트(alpha)로 인용이 주장을 뒷받침할 확률을 구한다. `noul` 응답을 내는 모델이면 쓸 수 있다."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import os
 
 import httpx
 
-from ..config import JEV_MODEL, SUPPORT_PROMPT_VERSION
+from ..config import SUPPORT_PROMPT_VERSION
 from ..schema import Article
 from .base import JudgeFailed, JudgeResult, SupportItem
 from .prompt import load_prompt
@@ -16,13 +16,16 @@ URL = "https://openrouter.ai/api/alpha/decisions"
 MAX_QUESTIONS = 50  # 문서에 한도가 없어서 보수적으로 나눈다
 
 
-class JevJudge:
+class OpenRouterJudge:
     def __init__(
         self,
+        name: str,
+        model: str,
         prompt_version: str = SUPPORT_PROMPT_VERSION,
         client: httpx.Client | None = None,
     ):
-        self.name = f"jev/{JEV_MODEL}"
+        self._model = model
+        self.name = f"{name}/{model}"
         self.prompt_id = f"classify/support/{prompt_version}"
         self._template = load_prompt("support", prompt_version)
         self.prompt_sha256 = hashlib.sha256(self._template.encode("utf-8")).hexdigest()
@@ -38,7 +41,7 @@ class JevJudge:
                 URL,
                 headers={"Authorization": f"Bearer {os.environ['OPENROUTER_API_KEY']}"},
                 json={
-                    "model": JEV_MODEL,
+                    "model": self._model,
                     "state": article.text,
                     "questions": {
                         item.id: {

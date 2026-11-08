@@ -4,7 +4,7 @@ import httpx
 import pytest
 
 from pipa_graph_rag.classify.base import JudgeFailed, SupportItem
-from pipa_graph_rag.classify.jev import MAX_QUESTIONS, JevJudge
+from pipa_graph_rag.classify.openrouter import MAX_QUESTIONS, OpenRouterJudge
 from pipa_graph_rag.schema import Article
 
 
@@ -23,8 +23,8 @@ def items(count: int) -> list[SupportItem]:
     return [SupportItem(id=f"r{i}", statement=f"주장{i}", quote=f"인용{i}") for i in range(count)]
 
 
-def judge_with(handler) -> JevJudge:
-    return JevJudge(client=httpx.Client(transport=httpx.MockTransport(handler)))
+def judge_with(handler, model: str = "vendor/test-model") -> OpenRouterJudge:
+    return OpenRouterJudge("test", model, client=httpx.Client(transport=httpx.MockTransport(handler)))
 
 
 def ok(request: httpx.Request, value: float = 0.8) -> httpx.Response:
@@ -54,6 +54,7 @@ def test_request_uses_state_and_noul_questions_keyed_by_item_id():
 
     result = judge_with(handler).judge(article(), items(2))
     body = seen["body"]
+    assert body["model"] == "vendor/test-model"
     assert body["state"] == article().text
     assert set(body["questions"]) == {"r0", "r1"}
     assert body["questions"]["r0"]["type"] == "noul"
@@ -62,6 +63,10 @@ def test_request_uses_state_and_noul_questions_keyed_by_item_id():
     assert seen["auth"] == "Bearer test-key"
     assert result.probabilities == [0.8, 0.8]
     assert (result.input_tokens, result.model_version) == (10, "typesafe/jev-test")
+
+
+def test_name_combines_label_and_model():
+    assert judge_with(ok, "vendor/other").name == "test/vendor/other"
 
 
 def test_questions_are_split_into_chunks_and_tokens_add_up():

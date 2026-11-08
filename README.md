@@ -20,14 +20,15 @@ docker compose up -d
 
 | 변수 | 용도 |
 | --- | --- |
-| `LAW_OC` | 법제처 OPEN API 인증키 |
+| `LAW_OC` | 법제처 OPEN API 인증키([국가법령정보 공동활용](https://open.law.go.kr)에서 신청) |
 | `OPENAI_API_KEY` | OpenAI API 키 |
-| `OPENROUTER_API_KEY` | OpenRouter API 키(Jev 판정에만 필요) |
+| `OPENROUTER_API_KEY` | OpenRouter API 키(`--judge jev`, `--judge pplx`에만 필요) |
 | `NEO4J_PASSWORD` | Neo4j 비밀번호 |
+| `NEO4J_URI`, `NEO4J_USER` | 선택. 기본은 `bolt://localhost:7687`, `neo4j` |
 
 Neo4j Browser: http://localhost:7474
 
-사용하는 모델, 프롬프트 버전, 기본 판정기, 질의 기본값, 병렬 작업 수, 데이터 폴더는 `src/pipa_graph_rag/config.py`에서 바꾼다. 명령줄 옵션을 주면 그 값이 우선한다.
+사용하는 모델, 프롬프트 버전, 기본 판정기, 질의 기본값, 병렬 작업 수, 데이터 폴더는 `src/pipa_graph_rag/config.py`에서 바꾼다. 각 설정의 선택지와 제약은 그 파일의 주석에 있고, 명령줄 옵션을 주면 그 값이 우선한다.
 
 ## 샘플로 바로 써 보기
 
@@ -42,7 +43,7 @@ uv run pipa-graph-rag ask "개인정보 유출 사실을 알게 되면 정보주
 
 ## 사용법
 
-아래 순서대로 실행한다. 각 단계의 결과는 `data/processed/`에 저장되고, 다시 실행하면 저장되지 않은 조문만 처리한다.
+아래 순서대로 실행한다. 각 단계의 결과는 `data/processed/`에 저장되고, 다시 실행하면 저장되지 않은 조문만 처리한다. 3, 4단계는 API 비용이 든다. 명령마다 옵션은 `uv run pipa-graph-rag <명령> --help`로 본다.
 
 ### 1. 조문 수집
 
@@ -85,7 +86,7 @@ uv run pipa-graph-rag judge
 ```
 
 - 결과: `support/<모델>-<프롬프트 버전>-<판정기>.jsonl`
-- `--judge decisions`(OpenAI Decisions API, 기본), `--judge jev`(Jev)
+- `--judge`: `decisions`(OpenAI Decisions API, 기본), `jev`(Jev), `pplx`(Perplexity의 pplx-decider). `jev`와 `pplx`는 OpenRouter로 호출한다.
 - `--extraction-model`: 판정할 추출 결과의 모델. 없으면 최신 프롬프트 버전의 추출 결과가 하나뿐일 때 그 파일을, 여럿이면 `EXTRACTION_MODEL`의 파일을 쓴다. 파일이 없으면 오류를 낸다. `load-graph`도 같다.
 
 ### 5. 그래프 적재
@@ -97,7 +98,8 @@ uv run pipa-graph-rag load-graph --reset
 ```
 
 - `--reset`: 적재 전에 Neo4j의 모든 노드를 지운다. 없으면 같은 데이터를 다시 넣어도 중복되지 않는다.
-- `--min-support`: 판정 확률이 이 값 이상인 개념 관계만 넣는다. 기본값은 0.1이고, 0이면 판정으로 거르지 않고 모두 넣는다.
+- `--judge`: 어느 판정기의 결과로 거를지 고른다. 기본은 `decisions`이다.
+- `--min-support`: 판정 확률이 이 값 이상인 개념 관계만 넣는다. 0이면 판정으로 거르지 않고 모두 넣는다. 판정기마다 확률의 눈금이 달라서 기본값도 다르다. 기본값은 `load-graph --help`에 나온다.
 
 ### 6. 질의
 
@@ -132,7 +134,7 @@ uv run pipa-graph-rag evaluate-search --answer --conditions keyword references/d
 | `references`, 깊이 1 | 20.8 | 0.913 |
 | `references+concepts`, 깊이 1, `--max-entity-degree 50` (기본) | 52.5 | 1.000 |
 
-판정기 두 개(Decisions API, Jev)의 정확도 비교는 `judge-sample`과 `judge-compare`로 한다. 라벨 90개로 쟀을 때 정확도는 둘 다 약 78%였고 차이를 구분할 수 없었다.
+판정기 두 개(Decisions API, Jev)의 정확도 비교는 `judge-sample`과 `judge-compare`로 한다. `judge-compare`는 이 두 판정기만 비교한다. 라벨 90개로 쟀을 때 정확도는 둘 다 약 78%였고 차이를 구분할 수 없었다.
 
 ## 그래프 구조
 
