@@ -28,3 +28,13 @@
 {"id":"q51","type":"위임","question":"여러 피해자가 함께 분쟁조정을 신청하려면 몇 명 이상이어야 하나요?","required":["law:49","decree:52"],"related":[]}
 {"id":"q52","type":"위임","question":"공공기관의 개인정보 보호 수준은 누가 어떤 기준으로 평가하나요?","required":["law:11-2","decree:13-2"],"related":[]}
 {"id":"q53","type":"준용","question":"개인정보 처리를 외주업체에 맡겼을 때 그 업체도 안전조치를 해야 하나요?","required":["law:26","law:29"],"related":[]}
+{"id":"q54","type":"단일","question":"회사가 개인정보를 수집할 때 지켜야 할 기본 원칙은 무엇인가요?","required":["law:3"],"related":[]}
+{"id":"q55","type":"단일","question":"직원이 고객 개인정보를 다루는 것을 회사가 관리해야 하나요?","required":["law:28"],"related":[]}
+{"id":"q56","type":"단일","question":"개인정보 보호를 위한 인력과 예산은 누가 챙겨야 하나요?","required":["law:30-3"],"related":[]}
+{"id":"q57","type":"단일","question":"개인정보를 불법으로 쓴 회사를 정부가 수사기관에 넘길 수 있나요?","required":["law:65"],"related":[]}
+{"id":"q58","type":"단일","question":"사고가 나기 전에도 정부가 회사의 개인정보 보호 상태를 미리 점검할 수 있나요?","required":["law:63-2"],"related":[]}
+{"id":"q59","type":"위임","question":"보호위원회가 회사에 자료를 내라고 하거나 사업장을 조사할 수 있는 경우는 언제인가요?","required":["law:63","decree:60"],"related":[]}
+{"id":"q60","type":"위임","question":"내 개인정보 전송을 도와주는 전문기관에는 어떤 종류가 있나요?","required":["law:35-3","decree:42-9"],"related":[]}
+{"id":"q61","type":"위임","question":"정부가 회사의 개인정보 처리방침을 평가하기도 하나요?","required":["law:30-2","decree:31-2"],"related":[]}
+{"id":"q62","type":"위임","question":"정부가 개인정보 보호 단체에 지원을 해 주나요?","required":["law:13","decree:14"],"related":[]}
+{"id":"q63","type":"준용","question":"개인정보 처리를 맡은 외주업체도 보유기간이 지나면 개인정보를 파기해야 하나요?","required":["law:26","law:21"],"related":[]}
