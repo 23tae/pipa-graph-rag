@@ -8,3 +8,13 @@
 {"id":"q31","type":"위임","question":"공공기관은 개인정보 파일을 운영할 때 어떤 내용을 등록해야 하나요?","required":["law:32","decree:33"],"related":[]}
 {"id":"q32","type":"예외","question":"집단분쟁조정 중에 일부 피해자가 소송을 내면 조정 절차는 중단되나요?","required":["law:49","law:48"],"related":[]}
 {"id":"q33","type":"준용","question":"배달 로봇이나 드론 같은 이동형 촬영기기를 운영할 때도 CCTV처럼 운영·관리 방침을 만들어야 하나요?","required":["law:25-2","law:25"],"related":[]}
+{"id":"q34","type":"단일","question":"고객 정보를 제휴 회사에 넘기려면 고객 동의가 꼭 필요한가요?","required":["law:17"],"related":[]}
+{"id":"q35","type":"단일","question":"처음 알린 목적과 다른 용도로 고객 정보를 쓰려면 고객 동의가 필요한가요?","required":["law:18"],"related":["law:15","decree:14-2"]}
+{"id":"q36","type":"단일","question":"다른 회사에서 받은 고객 정보를 내 마음대로 다른 곳에 넘겨도 되나요?","required":["law:19"],"related":[]}
+{"id":"q37","type":"단일","question":"직원이 업무상 알게 된 고객 정보를 다른 사람에게 마음대로 줘도 되나요?","required":["law:59"],"related":[]}
+{"id":"q38","type":"위임","question":"인터넷에 노출된 개인정보는 어느 기관이 삭제나 차단을 요청하나요?","required":["law:34-2","decree:40-2"],"related":[]}
+{"id":"q39","type":"위임","question":"가족이 대신 내 개인정보 열람을 요구할 수 있나요?","required":["law:38","decree:45"],"related":[]}
+{"id":"q40","type":"위임","question":"가명처리한 정보는 어떻게 보관하고 어떤 기록을 남겨야 하나요?","required":["law:28-4","decree:29-5"],"related":[]}
+{"id":"q41","type":"위임","question":"개인정보 유출에 대비해 보험에 가입해야 하는 회사는 어떤 곳인가요?","required":["law:39-7","decree:48-7"],"related":[]}
+{"id":"q42","type":"위임","question":"개인정보 보호 인증을 받으려면 어떤 절차를 거치나요?","required":["law:32-2","decree:34-2"],"related":[]}
+{"id":"q43","type":"준용","question":"CCTV 운영·관리 방침은 어디에 어떻게 공개해야 하나요?","required":["decree:25","decree:31"],"related":[]}
