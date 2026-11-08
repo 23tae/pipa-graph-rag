@@ -32,11 +32,11 @@ Neo4j Browser: http://localhost:7474
 
 ## 샘플로 바로 써 보기
 
-추출과 판정(LLM 호출) 없이, 저장소의 샘플 그래프(유출 통지 조문 7개)로 질의를 해볼 수 있다. `--reset`은 Neo4j의 모든 노드를 지우고 적재한다. `--no-answer`를 주면 OpenAI API 키 없이 가져온 조문만 본다.
+추출과 판정(LLM 호출) 없이, 저장소의 샘플 그래프(유출 통지 조문 7개)로 질의를 해볼 수 있다. `--reset`은 Neo4j의 모든 노드를 지우고 적재한다. `--no-answer`를 주면 OpenAI API 키 없이 가져온 조문만 본다. `--seed bm25`는 임베딩 없이 키워드 검색으로 시작 조문을 고른다(샘플 그래프에는 조문 벡터가 없다).
 
 ```bash
 uv run pipa-graph-rag import-graph --file data/sample/graph-sample.json --reset
-uv run pipa-graph-rag ask "개인정보 유출 사실을 알게 되면 정보주체에게 언제까지 통지해야 하나요?" --no-answer
+uv run pipa-graph-rag ask "개인정보 유출 사실을 알게 되면 정보주체에게 언제까지 통지해야 하나요?" --no-answer --seed bm25
 ```
 
 전체 그래프는 `export-graph`로 JSON 파일로 내보내고, `import-graph --file`로 적재한다.
@@ -103,9 +103,13 @@ uv run pipa-graph-rag load-graph --reset
 
 ### 6. 질의
 
-Neo4j에서 읽은 조문에서 질문과 비슷한 조문을 키워드(문자 n-gram BM25)로 찾고, 그래프로 이웃 조문까지 넓혀서 가져온 조문만 근거로 답한다. 답에 인용한 조문이 가져온 조문에 없으면 알려 준다.
+질문과 비슷한 조문을 시작 조문(시드)으로 찾고, 그래프로 이웃 조문까지 넓혀서 가져온 조문만 근거로 답한다. 답에 인용한 조문이 가져온 조문에 없으면 알려 준다. 시드는 기본으로 임베딩 검색(Neo4j 벡터 인덱스)으로 고르고, `--seed bm25`로 키워드(문자 n-gram BM25) 검색으로 바꿀 수 있다.
+
+임베딩 검색을 쓰려면 조문 벡터를 먼저 만들어(`embed`, 임베딩 API 호출) Neo4j에 넣는다(`load-embeddings`, API 호출 없음). 질의마다 질문을 임베딩하려고 임베딩 API를 부르므로 `--embedder`의 API 키(`qwen3-8b`는 `OPENROUTER_API_KEY`)가 필요하다. `qwen3-8b`의 질의용 요청은 응답이 빠른 제공자를 우선하도록(`provider.sort: "latency"`) 보내고, 조문 벡터를 만드는 `embed`는 가장 싼 제공자(`:floor`)로 보낸다. `load-graph --reset`이나 `import-graph --reset`은 노드를 모두 지우므로 조문 벡터도 사라지고, 그때는 `load-embeddings`를 다시 실행한다.
 
 ```bash
+uv run pipa-graph-rag embed
+uv run pipa-graph-rag load-embeddings
 uv run pipa-graph-rag ask "개인정보 유출 사실을 알게 되면 정보주체에게 언제까지 통지해야 하나요?"
 ```
 
@@ -113,7 +117,9 @@ uv run pipa-graph-rag ask "개인정보 유출 사실을 알게 되면 정보주
 | --- | --- | --- |
 | `--mode` | `keyword`(키워드 검색만), `references`(조문 사이 관계로 확장), `references+concepts`(개념 연결로도 확장) | `references+concepts` |
 | `--depth` | 확장 단계 수 | 1 |
-| `--top-k` | 키워드 검색으로 가져올 시드 조문 수 | 3 |
+| `--seed` | 시드를 고르는 방식: `bm25`, `embedding` | `embedding` |
+| `--embedder` | `--seed embedding`에 쓸 임베딩 모델. `load-embeddings`로 넣은 모델과 같아야 한다 | `qwen3-8b` |
+| `--top-k` | 시드 조문 수 | 3 |
 | `--max-entity-degree` | 개념 연결 확장에서 N개 이상의 조문이 언급하는 개체는 건너뜀. 0이면 건너뛰지 않음 | 50 |
 | `--no-answer` | 조문만 찾고 답변은 만들지 않음 | |
 
@@ -128,7 +134,7 @@ uv run pipa-graph-rag evaluate-search --answer --conditions keyword references/d
 
 `--answer`를 주면 답변도 만들어 인용한 조문을 정답과 대조한다. `--conditions`는 돌릴 조건을 고른다.
 
-시작 조문(시드)은 기본으로 BM25로 고른다. `embed`로 조문과 평가 질문의 임베딩을 만들어 두면 임베딩 검색(`embedding`)이나 BM25와 임베딩의 순위를 합산하는 하이브리드(`hybrid`)로도 고를 수 있다. `ask`는 아직 BM25만 쓴다.
+평가의 시드는 기본으로 BM25로 고른다. `embed`로 조문과 평가 질문의 임베딩을 만들어 두면 임베딩 검색(`embedding`)이나 BM25와 임베딩의 순위를 합산하는 하이브리드(`hybrid`)로도 고를 수 있다. `ask`의 시드는 위 질의에 설명한 대로 기본이 임베딩이다.
 
 ```bash
 uv run pipa-graph-rag embed --dry-run
@@ -142,6 +148,7 @@ uv run pipa-graph-rag evaluate-search --questions questions-2.jsonl --seeds bm25
 | `embed --dry-run` | API를 부르지 않고 보낼 요청 수와 글자 수만 출력 |
 | `evaluate-search --seeds` | 시드를 고르는 방식: `bm25`, `embedding`, `hybrid` |
 | `evaluate-search --top-k` | 시드 조문 수. 여러 값을 주면 각각 돌림 |
+| `evaluate-search --vectors` | 임베딩 시드를 계산하는 곳. `memory`(기본)는 캐시의 벡터로 메모리에서 정확히 계산하고, `neo4j`는 `load-embeddings`로 넣은 벡터 인덱스를 쓴다(질문 벡터는 캐시에서 읽음). `neo4j`는 `hybrid`를 지원하지 않는다 |
 | `evaluate-search --questions` | `data/evaluation`의 질문 파일. 새 질문 40개는 `questions-2.jsonl` |
 | `evaluate-search --out` | 결과 파일 이름. 질문 파일이나 시드 설정을 바꾸면 기존 결과를 덮어쓰지 않도록 꼭 줘야 함 |
 

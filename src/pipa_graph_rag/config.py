@@ -20,6 +20,7 @@ QUERY_MODE = "references+concepts"  # keyword | references | references+concepts
 QUERY_DEPTH = 1  # 시작 조문에서 그래프로 넓히는 단계 수
 QUERY_TOP_K = 3  # 키워드 검색으로 고르는 시작 조문 수
 QUERY_MAX_ENTITY_DEGREE = 50  # 이 수 이상의 조문이 언급하는 개체는 개념 확장에서 건너뛴다. 0이면 건너뛰지 않는다
+QUERY_SEED = "embedding"  # bm25 | embedding. 시작 조문을 고르는 방식. embedding은 질의마다 임베딩 API를 부르고 load-embeddings가 필요하다
 
 EMBEDDING_MODEL = "qwen3-8b"  # openai-small | qwen3-8b | qwen3-8b-plain(질문 지시문 없음). retrieval/embedders.py에 모델 ID가 있다
 
