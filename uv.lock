@@ -273,7 +273,7 @@ wheels = [
 ]
 
 [[package]]
-name = "pipa-statute-graph-rag"
+name = "pipa-graph-rag"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

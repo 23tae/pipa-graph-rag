@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from pipa_statute_graph_rag.extraction.models import ExtractorResult, RawExtraction
-from pipa_statute_graph_rag.extraction.pipeline import load_records, run_extraction
-from pipa_statute_graph_rag.schema import Article
+from pipa_graph_rag.extraction.models import ExtractorResult, RawExtraction
+from pipa_graph_rag.extraction.pipeline import load_records, run_extraction
+from pipa_graph_rag.schema import Article
 
 
 def make_article(number: int) -> Article:

@@ -2,14 +2,14 @@ import hashlib
 
 import pytest
 
-from pipa_statute_graph_rag.answer import AnswerOutput, ask, check_citations
-from pipa_statute_graph_rag.answer.prompt import (
+from pipa_graph_rag.answer import AnswerOutput, ask, check_citations
+from pipa_graph_rag.answer.prompt import (
     available_versions,
     build_user_message,
     load_prompt,
 )
-from pipa_statute_graph_rag.config import ANSWER_PROMPT_VERSION
-from pipa_statute_graph_rag.schema import Article
+from pipa_graph_rag.config import ANSWER_PROMPT_VERSION
+from pipa_graph_rag.schema import Article
 
 # 만든 프롬프트 버전의 본문은 고치지 않는다. 바꾸려면 새 버전을 추가하고 해시를 더한다.
 PINNED_SHA256 = {"v1": "22dc86ba22b656a9aa70c59b3260d7f8ed3117ee1dc8d4a77ccf3e5f3591c809"}

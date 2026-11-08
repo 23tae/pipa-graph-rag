@@ -1,6 +1,6 @@
-from pipa_statute_graph_rag.extraction.gate import apply_gate, quote_in_article
-from pipa_statute_graph_rag.extraction.models import RawExtraction, RawRelation
-from pipa_statute_graph_rag.schema import (
+from pipa_graph_rag.extraction.gate import apply_gate, quote_in_article
+from pipa_graph_rag.extraction.models import RawExtraction, RawRelation
+from pipa_graph_rag.schema import (
     Article,
     ConceptRelationKind,
     Deontic,

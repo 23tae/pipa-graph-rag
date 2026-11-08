@@ -37,7 +37,7 @@ def _resolve_extraction(model: str | None, version: str):
 
 def main() -> None:
     load_dotenv()
-    parser = argparse.ArgumentParser(prog="pipa-statute-graph-rag")
+    parser = argparse.ArgumentParser(prog="pipa-graph-rag")
     sub = parser.add_subparsers(dest="command", required=True)
 
     sub.add_parser("collect", help="법제처 API로 본법과 시행령 조문을 받는다")

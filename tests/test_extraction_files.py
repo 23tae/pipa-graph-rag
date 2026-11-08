@@ -1,6 +1,6 @@
 import pytest
 
-from pipa_statute_graph_rag.extraction.pipeline import resolve_extraction_path
+from pipa_graph_rag.extraction.pipeline import resolve_extraction_path
 
 
 def make(directory, *names):

@@ -2,8 +2,8 @@ import math
 
 import pytest
 
-from pipa_statute_graph_rag.classify.base import JudgeResult
-from pipa_statute_graph_rag.classify.comparison import (
+from pipa_graph_rag.classify.base import JudgeResult
+from pipa_graph_rag.classify.comparison import (
     Relation,
     compare_judges,
     evaluate,
@@ -11,7 +11,7 @@ from pipa_statute_graph_rag.classify.comparison import (
     stratified_sample,
     stratum,
 )
-from pipa_statute_graph_rag.schema import Article
+from pipa_graph_rag.schema import Article
 
 
 def relation(key: str) -> Relation:

@@ -3,9 +3,9 @@ import json
 import httpx
 import pytest
 
-from pipa_statute_graph_rag.classify.base import JudgeFailed, SupportItem
-from pipa_statute_graph_rag.classify.jev import MAX_QUESTIONS, JevJudge
-from pipa_statute_graph_rag.schema import Article
+from pipa_graph_rag.classify.base import JudgeFailed, SupportItem
+from pipa_graph_rag.classify.jev import MAX_QUESTIONS, JevJudge
+from pipa_graph_rag.schema import Article
 
 
 def article() -> Article:

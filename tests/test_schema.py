@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from pipa_statute_graph_rag.schema import (
+from pipa_graph_rag.schema import (
     ArticleReference,
     ConceptExtraction,
     ConceptRelation,

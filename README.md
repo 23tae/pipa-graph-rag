@@ -1,6 +1,6 @@
-# PIPA Statute Graph RAG
+# PIPA Graph RAG
 
-개인정보 보호법과 시행령의 조문 관계(참조, 준용, 예외, 위임)를 그래프로 구성하고, 연결된 조문까지 근거로 삼아 답하는 그래프 RAG. 스키마는 개인정보 온톨로지 PrOnto의 모듈 구조를 기반으로 한다.
+개인정보 보호법(PIPA, Personal Information Protection Act)과 시행령의 조문 관계(참조, 준용, 예외, 위임)를 그래프로 구성하고, 연결된 조문까지 근거로 삼아 답하는 그래프 RAG. 스키마는 개인정보 온톨로지 PrOnto의 모듈 구조를 기반으로 한다.
 
 ## 요구 사항
 
@@ -27,15 +27,15 @@ docker compose up -d
 
 Neo4j Browser: http://localhost:7474
 
-사용하는 모델, 프롬프트 버전, 기본 판정기, 질의 기본값, 병렬 작업 수, 데이터 폴더는 `src/pipa_statute_graph_rag/config.py`에서 바꾼다. 명령줄 옵션을 주면 그 값이 우선한다.
+사용하는 모델, 프롬프트 버전, 기본 판정기, 질의 기본값, 병렬 작업 수, 데이터 폴더는 `src/pipa_graph_rag/config.py`에서 바꾼다. 명령줄 옵션을 주면 그 값이 우선한다.
 
 ## 샘플로 바로 써 보기
 
 추출과 판정(LLM 호출) 없이, 저장소의 샘플 그래프(유출 통지 조문 7개)로 질의를 해볼 수 있다. `--reset`은 Neo4j의 모든 노드를 지우고 적재한다. `--no-answer`를 주면 OpenAI API 키 없이 가져온 조문만 본다.
 
 ```bash
-uv run pipa-statute-graph-rag import-graph --file data/sample/graph-sample.json --reset
-uv run pipa-statute-graph-rag ask "개인정보 유출 사실을 알게 되면 정보주체에게 언제까지 통지해야 하나요?" --no-answer
+uv run pipa-graph-rag import-graph --file data/sample/graph-sample.json --reset
+uv run pipa-graph-rag ask "개인정보 유출 사실을 알게 되면 정보주체에게 언제까지 통지해야 하나요?" --no-answer
 ```
 
 전체 그래프는 `export-graph`로 JSON 파일로 내보내고, `import-graph --file`로 적재한다.
@@ -49,7 +49,7 @@ uv run pipa-statute-graph-rag ask "개인정보 유출 사실을 알게 되면 �
 개인정보 보호법과 시행령의 현행 본문을 [법제처 국가법령정보 공동활용](https://open.law.go.kr) OPEN API에서 받아 조문 단위로 저장한다.
 
 ```bash
-uv run pipa-statute-graph-rag collect
+uv run pipa-graph-rag collect
 ```
 
 - 결과: `articles.json`
@@ -59,7 +59,7 @@ uv run pipa-statute-graph-rag collect
 조문 본문에서 참조, 준용, 예외, 위임 관계를 정규식으로 추출한다. 위임은 시행령이 본법 조문을 인용한 관계(`IMPLEMENTS`)를 뒤집어서 만든다.
 
 ```bash
-uv run pipa-statute-graph-rag references
+uv run pipa-graph-rag references
 ```
 
 - 결과: `references.json`
@@ -69,11 +69,11 @@ uv run pipa-statute-graph-rag references
 LLM으로 조문마다 역할, 처리 활동, 목적, 권리·의무 같은 개체와 그 관계를 추출한다. 관계마다 원문 인용을 요구하고, 인용이 조문 본문에 없거나 개체 유형이 맞지 않는 관계는 버린다.
 
 ```bash
-uv run pipa-statute-graph-rag extract
+uv run pipa-graph-rag extract
 ```
 
 - 결과: `extractions/<모델>-<프롬프트 버전>.jsonl`
-- `--model`: 추출에 쓸 OpenAI 모델. 기본값은 `src/pipa_statute_graph_rag/config.py`의 `EXTRACTION_MODEL`이다.
+- `--model`: 추출에 쓸 OpenAI 모델. 기본값은 `src/pipa_graph_rag/config.py`의 `EXTRACTION_MODEL`이다.
 - `--ids law:15 law:35`: 지정한 조문만 추출한다.
 
 ### 4. 지지 여부 판정
@@ -81,7 +81,7 @@ uv run pipa-statute-graph-rag extract
 추출한 관계마다 인용이 그 관계를 뒷받침하는지 판정해 확률을 저장한다.
 
 ```bash
-uv run pipa-statute-graph-rag judge
+uv run pipa-graph-rag judge
 ```
 
 - 결과: `support/<모델>-<프롬프트 버전>-<판정기>.jsonl`
@@ -93,7 +93,7 @@ uv run pipa-statute-graph-rag judge
 조문, 조문 관계, 개념 관계를 Neo4j에 넣는다. 본문이 "삭제"뿐인 조문은 넣지 않는다.
 
 ```bash
-uv run pipa-statute-graph-rag load-graph --reset
+uv run pipa-graph-rag load-graph --reset
 ```
 
 - `--reset`: 적재 전에 Neo4j의 모든 노드를 지운다. 없으면 같은 데이터를 다시 넣어도 중복되지 않는다.
@@ -104,7 +104,7 @@ uv run pipa-statute-graph-rag load-graph --reset
 Neo4j에서 읽은 조문에서 질문과 비슷한 조문을 키워드(문자 n-gram BM25)로 찾고, 그래프로 이웃 조문까지 넓혀서 가져온 조문만 근거로 답한다. 답에 인용한 조문이 가져온 조문에 없으면 알려 준다.
 
 ```bash
-uv run pipa-statute-graph-rag ask "개인정보 유출 사실을 알게 되면 정보주체에게 언제까지 통지해야 하나요?"
+uv run pipa-graph-rag ask "개인정보 유출 사실을 알게 되면 정보주체에게 언제까지 통지해야 하나요?"
 ```
 
 | 옵션 | 뜻 | 기본값 |
@@ -120,8 +120,8 @@ uv run pipa-statute-graph-rag ask "개인정보 유출 사실을 알게 되면 �
 질문 23개(단일 조문, 위임, 예외, 준용)와 질문마다 정답 조문을 `data/evaluation/questions.jsonl`에 두었다. 검색 설정별로 정답 조문을 얼마나 가져오는지 비교한다.
 
 ```bash
-uv run pipa-statute-graph-rag evaluate-search
-uv run pipa-statute-graph-rag evaluate-search --answer --conditions keyword references/d1
+uv run pipa-graph-rag evaluate-search
+uv run pipa-graph-rag evaluate-search --answer --conditions keyword references/d1
 ```
 
 `--answer`를 주면 답변도 만들어 인용한 조문을 정답과 대조한다. `--conditions`는 돌릴 조건을 고른다.

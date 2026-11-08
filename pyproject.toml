@@ -1,5 +1,5 @@
 [project]
-name = "pipa-statute-graph-rag"
+name = "pipa-graph-rag"
 version = "0.1.0"
 description = "개인정보 보호법과 시행령의 조문 관계를 그래프로 만들어 답하는 그래프 RAG"
 authors = [
@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.scripts]
-pipa-statute-graph-rag = "pipa_statute_graph_rag.cli:main"
+pipa-graph-rag = "pipa_graph_rag.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.13.7,<0.14.0"]
