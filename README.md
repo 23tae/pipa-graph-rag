@@ -45,6 +45,20 @@ uv run pipa-graph-rag ask "개인정보 유출 사실을 알게 되면 정보주
 
 아래 순서대로 실행한다. 각 단계의 결과는 `data/processed/`에 저장되고, 다시 실행하면 저장되지 않은 조문만 처리한다. 3, 4단계는 API 비용이 든다. 명령마다 옵션은 `uv run pipa-graph-rag <명령> --help`로 본다.
 
+```mermaid
+flowchart LR
+    API["법제처 OPEN API"] -->|"법령 본문"| P1("1. 조문 수집<br/>collect")
+    P1 -->|"조문"| D1[("articles.json")]
+    D1 -->|"조문"| P2("2. 조문 관계 추출<br/>references")
+    D1 -->|"조문"| P3("3. 개념 관계 추출<br/>extract")
+    P3 -->|"개념 관계"| P4("4. 지지 여부 판정<br/>judge")
+    P2 -->|"조문 관계"| P5("5. 그래프 적재<br/>load-graph")
+    P4 -->|"개념 관계·판정 확률"| P5
+    P5 -->|"조문·개체·관계"| N[("Neo4j")]
+    D1 -->|"조문"| P6("조문 벡터 생성·적재<br/>embed, load-embeddings")
+    P6 -->|"조문 벡터"| N
+```
+
 ### 1. 조문 수집
 
 개인정보 보호법과 시행령의 현행 본문을 [법제처 국가법령정보 공동활용](https://open.law.go.kr) OPEN API에서 받아 조문 단위로 저장한다.
@@ -104,6 +118,16 @@ uv run pipa-graph-rag load-graph --reset
 ### 6. 질의
 
 질문과 비슷한 조문을 시작 조문(시드)으로 찾고, 그래프로 이웃 조문까지 넓혀서 가져온 조문만 근거로 답한다. 답에 인용한 조문이 가져온 조문에 없으면 알려 준다. 시드는 기본으로 임베딩 검색(Neo4j 벡터 인덱스)으로 고르고, `--seed bm25`로 키워드(문자 n-gram BM25) 검색으로 바꿀 수 있다.
+
+```mermaid
+flowchart LR
+    U["사용자"] -->|"질문"| Q1("시드 조문 검색")
+    N[("Neo4j")] -->|"조문 벡터"| Q1
+    Q1 -->|"시드 조문"| Q2("이웃 조문 확장")
+    N -->|"조문 관계·개체"| Q2
+    Q2 -->|"가져온 조문"| Q3("답변 생성")
+    Q3 -->|"답변과 인용한 조문"| U2["사용자"]
+```
 
 임베딩 검색을 쓰려면 조문 벡터를 먼저 만들어(`embed`, 임베딩 API 호출) Neo4j에 넣는다(`load-embeddings`, API 호출 없음). 질의마다 질문을 임베딩하려고 임베딩 API를 부르므로 `--embedder`의 API 키(`qwen3-8b`는 `OPENROUTER_API_KEY`)가 필요하다. `qwen3-8b`의 질의용 요청은 응답이 빠른 제공자를 우선하도록(`provider.sort: "latency"`) 보내고, 조문 벡터를 만드는 `embed`는 가장 싼 제공자(`:floor`)로 보낸다. `load-graph --reset`이나 `import-graph --reset`은 노드를 모두 지우므로 조문 벡터도 사라지고, 그때는 `load-embeddings`를 다시 실행한다.
 
@@ -175,6 +199,27 @@ uv run pipa-graph-rag evaluate-search --questions questions-2.jsonl --seeds bm25
 ## 그래프 구조
 
 개념 대응은 [개념 대응표](docs/concept-mapping.md)에 있다.
+
+```mermaid
+flowchart LR
+    Role["Role<br/>역할"]
+    PA["ProcessingActivity<br/>처리"]
+    Data["DataCategory<br/>데이터"]
+    Purpose["Purpose<br/>목적"]
+    Deontic["Deontic<br/>권리·의무"]
+    Article["Article<br/>조문"]
+
+    Role -->|performs| PA
+    PA -->|acts on| Data
+    PA -->|has purpose| Purpose
+    Role -->|bears| Deontic
+    Deontic -->|has counterparty| Role
+    Deontic -->|concerns| PA
+    Deontic -->|concerns| Data
+    Purpose -->|described by| Article
+```
+
+그림의 화살표 글자는 아래 개념 관계 이름을 소문자 영어로 풀어 쓴 것이다.
 
 - 노드: `Article`(조문), `Role`, `ProcessingActivity`, `DataCategory`, `Purpose`, `Deontic`(개체)
 - 조문 사이 관계: `REFERS_TO`, `IMPLEMENTS`, `DELEGATES_TO`, `APPLIES_MUTATIS_MUTANDIS`, `EXCEPTION_TO`
