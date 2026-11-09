@@ -219,7 +219,7 @@ flowchart LR
     Purpose -->|described by| Article
 ```
 
-그림의 화살표 글자는 아래 개념 관계 이름을 소문자 영어로 풀어 쓴 것이다.
+그림의 화살표 글자는 아래 개념 관계의 이름을 풀어 쓴 것이다.
 
 - 노드: `Article`(조문), `Role`, `ProcessingActivity`, `DataCategory`, `Purpose`, `Deontic`(개체)
 - 조문 사이 관계: `REFERS_TO`, `IMPLEMENTS`, `DELEGATES_TO`, `APPLIES_MUTATIS_MUTANDIS`, `EXCEPTION_TO`
@@ -227,11 +227,25 @@ flowchart LR
 - `MENTIONS`: 조문이 개체를 언급한다.
 - 모든 관계에 원문 인용 `quote`가 있고, 개념 관계에는 출처 조문 `article_id`도 있다.
 
-Neo4j Browser에서 본법 제24조가 위임한 시행령 조문을 조회하는 예:
+### Neo4j Browser에서 조회
+
+`http://localhost:7474`에서 조회한다. 노드나 경로를 반환하면 그래프로, 속성을 반환하면 표로 나온다. 그래프의 화살표 글자는 관계 타입이다.
+
+본법 제24조가 위임한 시행령 조문의 번호와 제목(표):
 
 ```cypher
 MATCH (:Article {id: 'law:24'})-[:DELEGATES_TO]->(d) RETURN d.id, d.title
 ```
+
+![제24조가 위임한 시행령 조문 조회 결과(표)](https://github.com/user-attachments/assets/b25c11fc-7862-4243-b7e4-3ff434f8f1ba)
+
+본법 제34조와 조문 관계로 이어진 조문(제34조 포함 15개, 그래프):
+
+```cypher
+MATCH p=(a:Article {id: 'law:34'})-[r]-(b:Article) RETURN p
+```
+
+![제34조와 조문 관계로 이어진 조문 조회 결과](https://github.com/user-attachments/assets/91e22a82-80ab-47f5-8bea-1b3b02350cf8)
 
 ## 테스트
 
@@ -245,9 +259,9 @@ uv run pytest
 - 시행령이 가리키는 별표의 본문은 수집하지 않는다.
 - 개념 관계는 LLM이 추출한다. 지지 여부 판정으로 일부를 걸러도 틀린 관계가 남는다.
 - 법 위반 여부는 판정하지 않는다.
-- 기본 시드 검색은 질의마다 임베딩 API를 부른다. API 키와 네트워크가 필요하고 BM25(약 0.01초)보다 느리다. 질문 임베딩 호출 20회에서 중앙값 약 1.6초, 최대 약 11.2초로 편차가 컸다.
-- Neo4j 벡터 인덱스는 근사 검색이라 메모리의 정확한 계산과 시드 3개가 다른 질문이 있다(63개 중 7개. 모두 3위와 4위가 바뀌었다).
-- 평가 질문은 63개(23개와 40개) 규모라 작은 차이는 구분하지 못한다.
+- 시드 검색이 임베딩 API에 의존한다. 질의마다 질문을 임베딩하려고 API를 부르므로 API 키와 네트워크가 필요하고, BM25(약 0.01초)보다 느리다. 호출 20회에서 중앙값은 약 1.6초, 최대는 약 11.2초였다.
+- Neo4j 벡터 인덱스는 근사 검색이라, 메모리에서 정확히 계산한 결과와 시드 3개가 다른 질문이 있다(63개 중 7개, 모두 3위와 4위가 바뀜).
+- 평가 질문이 63개(23개와 40개)뿐이라 작은 차이는 구분하지 못한다.
 
 ## 출처와 유의 사항
 
