@@ -45,6 +45,20 @@ uv run pipa-graph-rag ask "개인정보 유출 사실을 알게 되면 정보주
 
 아래 순서대로 실행한다. 각 단계의 결과는 `data/processed/`에 저장되고, 다시 실행하면 저장되지 않은 조문만 처리한다. 3, 4단계는 API 비용이 든다. 명령마다 옵션은 `uv run pipa-graph-rag <명령> --help`로 본다.
 
+```mermaid
+flowchart LR
+    API["법제처 OPEN API"] -->|"법령 본문"| P1("1. 조문 수집<br/>collect")
+    P1 -->|"조문"| D1[("articles.json")]
+    D1 -->|"조문"| P2("2. 조문 관계 추출<br/>references")
+    D1 -->|"조문"| P3("3. 개념 관계 추출<br/>extract")
+    P3 -->|"개념 관계"| P4("4. 지지 여부 판정<br/>judge")
+    P2 -->|"조문 관계"| P5("5. 그래프 적재<br/>load-graph")
+    P4 -->|"개념 관계·판정 확률"| P5
+    P5 -->|"조문·개체·관계"| N[("Neo4j")]
+    D1 -->|"조문"| P6("조문 벡터 생성·적재<br/>embed, load-embeddings")
+    P6 -->|"조문 벡터"| N
+```
+
 ### 1. 조문 수집
 
 개인정보 보호법과 시행령의 현행 본문을 [법제처 국가법령정보 공동활용](https://open.law.go.kr) OPEN API에서 받아 조문 단위로 저장한다.
@@ -104,6 +118,16 @@ uv run pipa-graph-rag load-graph --reset
 ### 6. 질의
 
 질문과 비슷한 조문을 시작 조문(시드)으로 찾고, 그래프로 이웃 조문까지 넓혀서 가져온 조문만 근거로 답한다. 답에 인용한 조문이 가져온 조문에 없으면 알려 준다. 시드는 기본으로 임베딩 검색(Neo4j 벡터 인덱스)으로 고르고, `--seed bm25`로 키워드(문자 n-gram BM25) 검색으로 바꿀 수 있다.
+
+```mermaid
+flowchart LR
+    U["사용자"] -->|"질문"| Q1("시드 조문 검색")
+    N[("Neo4j")] -->|"조문 벡터"| Q1
+    Q1 -->|"시드 조문"| Q2("이웃 조문 확장")
+    N -->|"조문 관계·개체"| Q2
+    Q2 -->|"가져온 조문"| Q3("답변 생성")
+    Q3 -->|"답변과 인용한 조문"| U2["사용자"]
+```
 
 임베딩 검색을 쓰려면 조문 벡터를 먼저 만들어(`embed`, 임베딩 API 호출) Neo4j에 넣는다(`load-embeddings`, API 호출 없음). 질의마다 질문을 임베딩하려고 임베딩 API를 부르므로 `--embedder`의 API 키(`qwen3-8b`는 `OPENROUTER_API_KEY`)가 필요하다. `qwen3-8b`의 질의용 요청은 응답이 빠른 제공자를 우선하도록(`provider.sort: "latency"`) 보내고, 조문 벡터를 만드는 `embed`는 가장 싼 제공자(`:floor`)로 보낸다. `load-graph --reset`이나 `import-graph --reset`은 노드를 모두 지우므로 조문 벡터도 사라지고, 그때는 `load-embeddings`를 다시 실행한다.
 
@@ -176,17 +200,52 @@ uv run pipa-graph-rag evaluate-search --questions questions-2.jsonl --seeds bm25
 
 개념 대응은 [개념 대응표](docs/concept-mapping.md)에 있다.
 
+```mermaid
+flowchart LR
+    Role["Role<br/>역할"]
+    PA["ProcessingActivity<br/>처리"]
+    Data["DataCategory<br/>데이터"]
+    Purpose["Purpose<br/>목적"]
+    Deontic["Deontic<br/>권리·의무"]
+    Article["Article<br/>조문"]
+
+    Role -->|performs| PA
+    PA -->|acts on| Data
+    PA -->|has purpose| Purpose
+    Role -->|bears| Deontic
+    Deontic -->|has counterparty| Role
+    Deontic -->|concerns| PA
+    Deontic -->|concerns| Data
+    Purpose -->|described by| Article
+```
+
+그림의 화살표 글자는 아래 개념 관계의 이름을 풀어 쓴 것이다.
+
 - 노드: `Article`(조문), `Role`, `ProcessingActivity`, `DataCategory`, `Purpose`, `Deontic`(개체)
 - 조문 사이 관계: `REFERS_TO`, `IMPLEMENTS`, `DELEGATES_TO`, `APPLIES_MUTATIS_MUTANDIS`, `EXCEPTION_TO`
 - 개념 관계: `PERFORMS`, `ACTS_ON`, `HAS_PURPOSE`, `BEARS`, `COUNTERPARTY`, `CONCERNS_ACTIVITY`, `CONCERNS_DATA`, `DESCRIBED_BY`
 - `MENTIONS`: 조문이 개체를 언급한다.
 - 모든 관계에 원문 인용 `quote`가 있고, 개념 관계에는 출처 조문 `article_id`도 있다.
 
-Neo4j Browser에서 본법 제24조가 위임한 시행령 조문을 조회하는 예:
+### Neo4j Browser에서 조회
+
+`http://localhost:7474`에서 조회한다. 노드나 경로를 반환하면 그래프로, 속성을 반환하면 표로 나온다. 그래프의 화살표 글자는 관계 타입이다.
+
+본법 제24조가 위임한 시행령 조문의 번호와 제목(표):
 
 ```cypher
 MATCH (:Article {id: 'law:24'})-[:DELEGATES_TO]->(d) RETURN d.id, d.title
 ```
+
+![제24조가 위임한 시행령 조문 조회 결과(표)](https://github.com/user-attachments/assets/b25c11fc-7862-4243-b7e4-3ff434f8f1ba)
+
+본법 제34조와 조문 관계로 이어진 조문(제34조 포함 15개, 그래프):
+
+```cypher
+MATCH p=(a:Article {id: 'law:34'})-[r]-(b:Article) RETURN p
+```
+
+![제34조와 조문 관계로 이어진 조문 조회 결과](https://github.com/user-attachments/assets/91e22a82-80ab-47f5-8bea-1b3b02350cf8)
 
 ## 테스트
 
@@ -200,9 +259,9 @@ uv run pytest
 - 시행령이 가리키는 별표의 본문은 수집하지 않는다.
 - 개념 관계는 LLM이 추출한다. 지지 여부 판정으로 일부를 걸러도 틀린 관계가 남는다.
 - 법 위반 여부는 판정하지 않는다.
-- 기본 시드 검색은 질의마다 임베딩 API를 부른다. API 키와 네트워크가 필요하고 BM25(약 0.01초)보다 느리다. 질문 임베딩 호출 20회에서 중앙값 약 1.6초, 최대 약 11.2초로 편차가 컸다.
-- Neo4j 벡터 인덱스는 근사 검색이라 메모리의 정확한 계산과 시드 3개가 다른 질문이 있다(63개 중 7개. 모두 3위와 4위가 바뀌었다).
-- 평가 질문은 63개(23개와 40개) 규모라 작은 차이는 구분하지 못한다.
+- 시드 검색이 임베딩 API에 의존한다. 질의마다 질문을 임베딩하려고 API를 부르므로 API 키와 네트워크가 필요하고, BM25(약 0.01초)보다 느리다. 호출 20회에서 중앙값은 약 1.6초, 최대는 약 11.2초였다.
+- Neo4j 벡터 인덱스는 근사 검색이라, 메모리에서 정확히 계산한 결과와 시드 3개가 다른 질문이 있다(63개 중 7개, 모두 3위와 4위가 바뀜).
+- 평가 질문이 63개(23개와 40개)뿐이라 작은 차이는 구분하지 못한다.
 
 ## 출처와 유의 사항
 
